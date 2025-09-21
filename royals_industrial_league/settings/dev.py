@@ -1,5 +1,9 @@
 from .base import *
 import os
+import environ
+
+env = environ.Env()
+environ.Env.read_env(os.path.join("/etc/secrets", ".dev.env"))
 # royals_industrial_league/settings/prod.py  (and mirror in base.py)
 
 DEBUG = True
