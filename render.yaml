@@ -3,7 +3,8 @@ services:
   - type: web
     name: royals-dev
     env: python
-    plan: starter
+    region: virginia
+    plan: free
     branch: dev
     buildCommand: |
       pip install -r requirements.txt
@@ -31,12 +32,6 @@ services:
         fromDatabase:
           name: royals-dev-db
           property: connectionString
-
-databases:
-  - name: royals-dev-db
-    region: virginia
-    plan: basic-256mb
-    diskSizeGB: 15
 
 # Optional scheduled jobs — uncomment when you’re ready
 #  - type: cron
