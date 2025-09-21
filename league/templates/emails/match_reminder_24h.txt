@@ -1,0 +1,15 @@
+Hi {{ first_name|default:user.first_name|default:"Player" }},
+
+This is a reminder that your Royals match is tomorrow:
+
+  • Opponent: {{ fixture.opponent }}
+  • Date: {{ match_dt|date:"D M j, g:i a" }}
+  • Location: {% if fixture.home %}Home{% else %}Away{% endif %}
+  • Slot: {{ slot_label }}
+  {% if is_doubles %}• Partner: {{ partner_full_name }}{% endif %}
+
+Fixture details:
+{{ fixture_url }}
+
+Play hard!
+Royals Industrial League

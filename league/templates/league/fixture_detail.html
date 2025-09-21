@@ -1,0 +1,226 @@
+{% extends "league/base.html" %}
+{% block content %}
+<h1 class="h4 mb-3">Match</h1>
+<div class="row g-3 mb-3">
+  <div class="col-12 col-lg-6">
+    <div class="glass-card p-3 h-100">
+      <div class="card-body">
+        <h5 class="card-title">{{ fixture }}</h5>
+        <p class="mb-2"><strong>Date:</strong> {{ fixture.date|date:"D M j, g:i a" }}</p>
+        {% if fixture.is_bye %}
+          <p class="mb-2">
+            <strong>Opponent:</strong> <span class="badge bg-secondary">BYE</span>
+          </p>
+          <div class="alert alert-info py-2 mb-2">Bye week — no availability is needed.</div>
+        {% else %}
+          <p class="mb-2"><strong>Opponent:</strong> {{ fixture.opponent }}</p>
+          <p class="mb-2"><strong>Home/Away:</strong> {% if fixture.home %}Home{% else %}Away{% endif %}</p>
+          {% with score_count=fixture.slot_scores.all|length %}
+            {% if score_count %}
+              <span class="badge bg-secondary">Availability closed</span>
+            {% else %}
+              <a class="btn btn-outline-primary" href="{% url 'availability_update' fixture.id %}">Update my availability</a>
+            {% endif %}
+          {% endwith %}
+        {% endif %}
+
+        {% if user.is_authenticated %}
+          {% if user.is_staff or user.player_profile and user.player_profile.is_captain %}
+            <hr class="my-3">
+            {% if fixture.is_bye %}
+              <div class="text-muted small">Bye week — captain tools are not applicable.</div>
+            {% else %}
+              <div class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'admin_availability_matrix' fixture.id %}">Availability</a>
+                <a class="btn btn-sm btn-primary" href="{% url 'admin_lineup_builder' fixture.id %}">Lineup</a>
+              </div>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    {% if lineup and not fixture.is_bye %}
+    <div class="glass-card p-3 h-100">
+      <div class="card-body">
+        <h6>Lineup {% if lineup.published %}<span class="badge bg-success">Published</span>{% else %}<span class="badge bg-secondary">Draft</span>{% endif %}</h6>
+        <ul class="mb-0">
+          {% for slot in lineup.slots.all %}
+            <li>
+              {{ slot.get_slot_display }} — {{ slot.player1 }}{% if slot.player2 %} / {{ slot.player2 }}{% endif %}
+              {% for ss in fixture.slot_scores.all %}
+                {% if ss.slot_code == slot.slot %}
+                  :
+                  {% if ss.result == 'W' or ss.result == 'WF' %}
+                    <span class="text-success fw-bold">{{ ss.get_result_display }} ({{ ss.home_games }}-{{ ss.away_games }})</span>
+                  {% elif ss.result == 'T' %}
+                    <span class="text-info fw-semibold">{{ ss.get_result_display }} ({{ ss.home_games }}-{{ ss.away_games }})</span>
+                  {% elif ss.result == 'L' or ss.result == 'LF' %}
+                    <span class="text-warning fw-semibold">{{ ss.get_result_display }} ({{ ss.home_games }}-{{ ss.away_games }})</span>
+                  {% else %}
+                    {{ ss.get_result_display }} ({{ ss.home_games }}-{{ ss.away_games }})
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </li>
+          {% empty %}
+            <li>Lineup not set yet.</li>
+          {% endfor %}
+        </ul>
+        {% if lineup.notes %}
+          <hr class="my-2">
+          <div class="small text-muted"><strong>Notes:</strong> {{ lineup.notes }}</div>
+        {% endif %}
+      </div>
+    </div>
+    {% elif fixture.is_bye %}
+    <div class="glass-card p-3 h-100">
+      <div class="card-body">
+        <h6 class="mb-0"><span class="badge bg-secondary">BYE</span> No lineup for bye weeks.</h6>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% comment %} Sub Matches section {% endcomment %}
+<div class="glass-card p-3 mt-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Sub Matches</h6>
+      {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.player_profile and user.player_profile.is_captain %}
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'subplan_create' fixture.id %}">Add Sub Match</a>
+      {% endif %}
+    </div>
+
+    {% if sub_plans %}
+      {% regroup sub_plans by timeslot as sub_by_slot %}
+      {% for grp in sub_by_slot %}
+        <div class="mb-2">
+          <div class="fw-semibold text-muted">Timeslot: {{ grp.grouper|default:"—" }}</div>
+              <div class="table-responsive table-scroll-70">
+            <table class="table table-sm align-middle mb-2 glass-table table-glass-transparent">
+              <thead class="table-head-glass">
+                <tr>
+                  <th scope="col" class="w-22">Player</th>
+                  <th scope="col" class="w-12">Slot</th>
+                  <th scope="col" class="w-26">Opponent</th>
+                  <th scope="col" class="w-12">Status</th>
+                  <th scope="col" class="w-28">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for plan in grp.list %}
+                  {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.player_profile and user.player_profile.is_captain %}
+                    {% if plan.subresult %}
+                      <tr class="row-link" data-href="{% url 'subresult_edit' plan.subresult.id %}">
+                    {% else %}
+                      <tr class="row-link" data-href="{% url 'subplan_edit' plan.id %}">
+                    {% endif %}
+                  {% else %}
+                    <tr>
+                  {% endif %}
+                      <td>
+                        {{ plan.player }}
+                        {% if plan.conflict %}
+                          <span class="badge bg-danger ms-2" title="Player is in the published lineup at this timeslot">Conflict</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ plan.get_slot_code_display }}</td>
+                      <td>
+                        {% if plan.target_type == 'AGAINST_US' %}
+                          Against Us — {{ fixture.opponent }}
+                        {% else %}
+                          Other Team — {{ plan.target_team_name }}
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if plan.published %}
+                          <span class="badge bg-success">Published</span>
+                        {% else %}
+                          <span class="badge bg-secondary">Draft</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if plan.subresult %}
+                          {# Mirror lineup coloring logic #}
+                          {% if plan.subresult.result == 'W' or plan.subresult.result == 'WF' %}
+                            <span class="text-success fw-bold">{{ plan.subresult.get_result_display }} ({{ plan.subresult.home_games }}-{{ plan.subresult.away_games }})</span>
+                          {% elif plan.subresult.result == 'T' %}
+                            <span class="text-info fw-semibold">{{ plan.subresult.get_result_display }} ({{ plan.subresult.home_games }}-{{ plan.subresult.away_games }})</span>
+                          {% elif plan.subresult.result == 'L' or plan.subresult.result == 'LF' %}
+                            <span class="text-warning fw-semibold">{{ plan.subresult.get_result_display }} ({{ plan.subresult.home_games }}-{{ plan.subresult.away_games }})</span>
+                          {% else %}
+                            {{ plan.subresult.get_result_display }} ({{ plan.subresult.home_games }}-{{ plan.subresult.away_games }})
+                          {% endif %}
+                        {% else %}
+                          {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.player_profile and user.player_profile.is_captain %}
+                            <div class="d-flex flex-wrap gap-2">
+                              <a class="btn btn-sm btn-outline-secondary" href="{% url 'subplan_edit' plan.id %}">Edit</a>
+                              {% if plan.published %}
+                                <a class="btn btn-sm btn-outline-warning" href="{% url 'subplan_toggle' plan.id %}">Unpublish</a>
+                                <a class="btn btn-sm btn-primary" href="{% url 'subresult_from_plan' plan.id %}">Finalize → Result</a>
+                              {% else %}
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'subplan_toggle' plan.id %}">Publish</a>
+                              {% endif %}
+                             <form method="post" action="{% url 'subplan_delete' plan.id %}" class="d-inline"
+                                   onsubmit="return confirm('Delete this sub assignment?');">
+                               {% csrf_token %}
+                               <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                             </form>
+                            </div>
+                          {% else %}
+                            <span class="text-muted">—</span>
+                          {% endif %}
+                        {% endif %}
+                      </td>
+                    </tr>
+                {% endfor %}
+                {# Ad-hoc sub results with no linked plan #}
+                {% for sr in fixture.sub_results.all %}
+                  {% if not sr.plan and sr.timeslot == grp.grouper %}
+                    {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.player_profile and user.player_profile.is_captain %}
+                      <tr class="row-link" data-href="{% url 'subresult_edit' sr.id %}">
+                    {% else %}
+                      <tr>
+                    {% endif %}
+                        <td>{{ sr.player }}</td>
+                        <td>{{ sr.get_slot_code_display }}</td>
+                        <td>
+                          {% if sr.target_type == 'AGAINST_US' %}
+                            Against Us — {{ fixture.opponent }}
+                          {% else %}
+                            Other Team — {{ sr.target_team_name }}
+                          {% endif %}
+                        </td>
+                        <td><span class="badge bg-info">Ad‑hoc</span></td>
+                        <td>
+                          {% if sr.result == 'W' or sr.result == 'WF' %}
+                            <span class="text-success fw-bold">{{ sr.get_result_display }} ({{ sr.home_games }}-{{ sr.away_games }})</span>
+                          {% elif sr.result == 'T' %}
+                            <span class="text-info fw-semibold">{{ sr.get_result_display }} ({{ sr.home_games }}-{{ sr.away_games }})</span>
+                          {% elif sr.result == 'L' or sr.result == 'LF' %}
+                            <span class="text-warning fw-semibold">{{ sr.get_result_display }} ({{ sr.home_games }}-{{ sr.away_games }})</span>
+                          {% else %}
+                            {{ sr.get_result_display }} ({{ sr.home_games }}-{{ sr.away_games }})
+                          {% endif %}
+                        </td>
+                      </tr>
+                  {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="text-muted">No sub matches yet.</div>
+    {% endif %}
+
+    {% if not user.is_authenticated or not user.is_staff and not user.player_profile or not user.is_staff and user.player_profile and not user.player_profile.is_captain %}
+      <div class="small text-muted">Published sub matches are visible here when your captain shares them.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

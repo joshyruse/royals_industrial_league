@@ -1,0 +1,136 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Schedule{% if selected %} — {{ selected }}{% endif %}</h1>
+  <form method="get" class="mb-0 d-flex align-items-center gap-2">
+    <label for="season-select" class="form-label me-2 mb-0">Season</label>
+    {% if seasons %}
+      <select id="season-select" name="season" class="form-select form-select-sm d-inline-block w-auto minw-220 theme-select">
+        {% for s in seasons %}
+          <option value="{{ s.id }}" {% if selected and s.id == selected.id %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    {% else %}
+      <select id="season-select" class="form-select form-select-sm d-inline-block w-auto minw-220 theme-select" disabled>
+        <option>(no seasons)</option>
+      </select>
+    {% endif %}
+  </form>
+</div>
+{% if not selected %}
+  <div class="alert alert-danger">No rostered seasons available.</div>
+{% endif %}
+<div class="glass-card p-0">
+  <div class="rounded-4 overflow-hidden">
+    <div class="table-responsive table-scroll-70">
+      <table class="table table-hover align-middle mb-0 glass-table table-glass-transparent table-min-640 table-compact">
+      <thead class="table-head-glass">
+        <tr>
+          <th scope="col" class="col-date">Date</th>
+          <th scope="col" class="col-available">Available</th>
+          <th scope="col" class="col-subavail">Sub Availability</th>
+          <th scope="col" class="col-opponent">Opponent</th>
+          <th scope="col" class="col-ha">Home/Away</th>
+          <th scope="col" class="col-results">Results</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for f in fixtures %}
+        <tr class="row-link" data-href="{% url 'fixture_detail' f.id %}">
+          <td>{{ f.date|date:"D M j, g:i a" }}</td>
+          <td>
+            {% if user.is_authenticated and user.player_profile and not f.is_bye and not f.result_text %}
+              {# expected: view will pass avail_map = {fixture_id: 'A'|'N'|'?' } #}
+              {% with status=f.user_status %}
+              <div class="btn-group" role="group" aria-label="Availability toggle">
+                <button type="button"
+                        class="btn btn-sm {% if status == 'A' %}btn-success{% else %}btn-outline-secondary{% endif %} avail-btn"
+                        data-fixture="{{ f.id }}" data-status="A">
+                  Yay
+                </button>
+                <button type="button"
+                        class="btn btn-sm {% if status == 'N' %}btn-danger{% else %}btn-outline-secondary{% endif %} avail-btn"
+                        data-fixture="{{ f.id }}" data-status="N">
+                  Nay
+                </button>
+              </div>
+              {% endwith %}
+            {% elif f.is_bye %}
+              <span class="text-muted">—</span>
+            {% else %}
+              {% if f.result_text %}
+                <span class="badge bg-secondary">Closed</span>
+              {% else %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'availability_update' f.id %}">Set</a>
+              {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            {% if user.is_authenticated and user.player_profile and not f.result_text %}
+              <div class="btn-group" role="group" aria-label="Sub availability">
+                {# 08:30 #}
+                <button type="button"
+                        class="btn btn-sm {% if "0830" in f.sub_avail_timeslots %}btn-primary{% else %}btn-outline-secondary{% endif %} subavail-btn"
+                        data-fixture="{{ f.id }}" data-timeslot="0830" data-active="{% if "0830" in f.sub_avail_timeslots %}1{% else %}0{% endif %}">
+                  08:30
+                </button>
+                {# 10:00 #}
+                <button type="button"
+                        class="btn btn-sm {% if "1000" in f.sub_avail_timeslots %}btn-primary{% else %}btn-outline-secondary{% endif %} subavail-btn"
+                        data-fixture="{{ f.id }}" data-timeslot="1000" data-active="{% if "1000" in f.sub_avail_timeslots %}1{% else %}0{% endif %}">
+                  10:00
+                </button>
+                {# 11:30 #}
+                <button type="button"
+                        class="btn btn-sm {% if "1130" in f.sub_avail_timeslots %}btn-primary{% else %}btn-outline-secondary{% endif %} subavail-btn"
+                        data-fixture="{{ f.id }}" data-timeslot="1130" data-active="{% if "1130" in f.sub_avail_timeslots %}1{% else %}0{% endif %}">
+                  11:30
+                </button>
+              </div>
+            {% else %}
+              {% if f.result_text %}
+                <span class="badge bg-secondary">Closed</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            {% if f.is_bye %}
+              <span class="badge bg-secondary">BYE</span>
+            {% else %}
+              {{ f.opponent }}
+            {% endif %}
+          </td>
+          <td>
+            {% if f.is_bye %}
+              —
+            {% else %}
+              {% if f.home %}Home{% else %}Away{% endif %}
+            {% endif %}
+          </td>
+          <td>
+            {% if f.is_bye %}
+              <span class="badge bg-secondary">BYE</span>
+            {% elif f.result_text %}
+              {{ f.result_text }}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No fixtures.</td></tr>
+      {% endfor %}
+      </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- Expose resolved URLs for JS (CSP-safe) -->
+<div id="schedule-config"
+     data-availability-url="{% url 'availability_set_ajax' %}"
+     data-sub-availability-url="{% url 'sub_availability_set_ajax' %}"></div>
+<script src="{% static 'js/schedule_list.js' %}" defer></script>
+{% endblock %}

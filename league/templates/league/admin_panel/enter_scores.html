@@ -1,0 +1,195 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Enter Scores — {{ fixture.season }} · Week {{ fixture.week_number }} · {% if fixture.is_bye %}BYE{% else %}vs {{ fixture.opponent }}{% endif %}</h1>
+    <div class="d-flex gap-2">
+      <a href="{% url 'admin_manage_scores' %}?season={{ fixture.season.id }}" class="btn btn-sm btn-outline-primary">Back to Scores</a>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="alert alert-info d-flex justify-content-between align-items-center" id="match-total">
+    <div>
+      <strong>Match total:</strong>
+      <span id="total-home">{{ match_home_total|default:"0" }}</span>
+      –
+      <span id="total-away">{{ match_away_total|default:"0" }}</span>
+    </div>
+    <small class="text-muted">Updates as you pick results.</small>
+  </div>
+
+  {% if fixture.is_bye %}
+    <div class="glass-card mb-4 p-3">
+      <div class="alert alert-info mb-0">This is a BYE week — regular lineup scores are not applicable. Use the Sub Results section below to record substitute match outcomes.</div>
+    </div>
+  {% else %}
+    <div class="glass-card p-0 overflow-hidden">
+      <div class="card-body p-0">
+        <form method="post" class="p-0 m-0">
+          {% csrf_token %}
+          <div class="table-responsive table-scroll-70">
+            <table class="table table-sm align-middle mb-0 glass-table table-glass-transparent">
+              <thead class="table-head-glass">
+                <tr>
+                  <th scope="col" class="w-12">Slot</th>
+                  <th scope="col">Lineup</th>
+                  <th scope="col" class="w-14">Home Games</th>
+                  <th scope="col" class="w-14">Away Games</th>
+                  <th scope="col" class="w-22">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in rows %}
+                  <tr>
+                    <td><strong>{{ r.slot_label }}</strong></td>
+                    <td>
+                      {% if r.slot == 'S1' or r.slot == 'S2' or r.slot == 'S3' %}
+                        {% if r.p1 %}{{ r.p1.first_name }} {{ r.p1.last_name }}{% else %}<span class="text-muted">—</span>{% endif %}
+                      {% else %}
+                        {% if r.p1 %}{{ r.p1.first_name }} {{ r.p1.last_name }}{% else %}<span class="text-muted">—</span>{% endif %}
+                        &nbsp;·&nbsp;
+                        {% if r.p2 %}{{ r.p2.first_name }} {{ r.p2.last_name }}{% else %}<span class="text-muted">—</span>{% endif %}
+                      {% endif %}
+                    </td>
+                    <td>
+                      <input type="number" min="0" class="form-control form-control-sm" name="score-{{ r.slot }}-home" value="{{ r.home_games }}" placeholder="0">
+                    </td>
+                    <td>
+                      <input type="number" min="0" class="form-control form-control-sm" name="score-{{ r.slot }}-away" value="{{ r.away_games }}" placeholder="0">
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" name="score-{{ r.slot }}-result">
+                        <option value="">— Select result —</option>
+                        {% for val,label in result_choices %}
+                          <option value="{{ val }}" {% if r.result == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="border-top p-3 d-flex justify-content-between align-items-center">
+            <div class="text-muted small">Scoring: Win/WFF = 2 pts, Tie = 1 pt, Loss/LFF = 0 pts. Doubles split points evenly.</div>
+            <div class="d-flex gap-2">
+              <a href="{% url 'admin_manage_scores' %}?season={{ fixture.season.id }}" class="btn btn-outline-secondary">Cancel</a>
+              <button class="btn btn-primary">Save Scores</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Sub Results Panel -->
+  <div class="glass-card mt-4 p-0 overflow-hidden">
+    <div class="card-body p-0">
+      <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+        <h2 class="h6 mb-0">Sub Results (do not affect match total)</h2>
+        <div class="d-flex gap-2">
+          <a href="{% url 'subresult_create' fixture.id %}" class="btn btn-sm btn-outline-primary">Add Ad‑Hoc Sub Result</a>
+        </div>
+      </div>
+
+      <div class="p-3">
+        {% if sub_plans_unrecorded %}
+          <h6 class="mb-2">Planned Subs — record result</h6>
+          <div class="table-responsive mb-3 table-scroll-70">
+            <table class="table table-sm align-middle mb-0 glass-table table-glass-transparent">
+              <thead class="table-head-glass">
+                <tr>
+                  <th scope="col" class="w-18">Timeslot</th>
+                  <th scope="col" class="w-28">Player</th>
+                  <th scope="col" class="w-14">Slot</th>
+                  <th scope="col" class="w-28">Target</th>
+                  <th scope="col" class="w-18"Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for plan in sub_plans_unrecorded %}
+                  <tr>
+                    <td>{{ plan.get_timeslot_display }}</td>
+                    <td>{{ plan.player }}</td>
+                    <td>{{ plan.get_slot_code_display }}</td>
+                    <td>
+                      {% if plan.target_type == 'AGAINST_US' %}
+                        Against Us — {{ fixture.opponent }}
+                      {% else %}
+                        Other Team — {{ plan.target_team_name }}
+                      {% endif %}
+                    </td>
+                    <td>
+                      <a href="{% url 'subresult_from_plan' plan.id %}" class="btn btn-sm btn-primary">Record Result</a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="5" class="text-center text-muted">No planned subs pending results.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+
+        <h6 class="mb-2">Recorded Sub Results</h6>
+        <div class="table-responsive table-scroll-70">
+          <table class="table table-sm align-middle mb-0 glass-table table-glass-transparent">
+            <thead class="table-head-glass">
+              <tr>
+                <th scope="col" class="w-12">Timeslot</th>
+                <th scope="col" class="w-20">Player</th>
+                <th scope="col" class="w-10">Type</th>
+                <th scope="col" class="12">Slot</th>
+                <th scope="col" class="w-24">Target</th>
+                <th scope="col" class="w-12">Result</th>
+                <th scope="col" class="text-center text-nowrap pe-3 w-10">Points</th>
+                <th scope="col" class="text-center ps-2 w-16">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sr in sub_results %}
+                <tr>
+                  <td>{{ sr.get_timeslot_display }}</td>
+                  <td>{{ sr.player }}</td>
+                  <td>{{ sr.get_kind_display }}</td>
+                  <td>{{ sr.get_slot_code_display }}</td>
+                  <td>
+                    {% if sr.target_type == 'AGAINST_US' %}
+                      Against Us — {{ fixture.opponent }}
+                    {% else %}
+                      Other Team — {{ sr.target_team_name }}
+                    {% endif %}
+                  </td>
+                  <td>{{ sr.get_result_display }} ({{ sr.home_games }}-{{ sr.away_games }})</td>
+                  <td class="text-center text-nowrap pe-3">{{ sr.points_cached|floatformat:-2 }}</td>
+                  <td class="text-center">
+                    <div class="d-inline-flex gap-2">
+                      <a href="{% url 'subresult_edit' sr.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                      <a href="{% url 'subresult_delete' sr.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="8" class="text-center text-muted">No sub results recorded yet.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="{% static 'js/enter_scores.js' %}" defer></script>
+{% endblock %}

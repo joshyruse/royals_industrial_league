@@ -1,0 +1,33 @@
+{% comment %}Plain-text fallback for the lineup published email{% endcomment %}
+{% with greet_name=first_name|default:player_first_name|default:recipient.first_name|default:user.first_name|default:player.user.first_name|default:"there" %}
+Hi {{ greet_name }},
+{% endwith %}
+
+You’ve been selected to play in the upcoming match.
+
+Match:
+{% if fixture %}
+- Date: {{ fixture.pretty_date|default:fixture.date }}{% if fixture.time %} at {{ fixture.time }}{% endif %}
+- Opponent: {% if fixture.opponent %}{{ fixture.opponent }}{% else %}TBD{% endif %}
+- Location: {% if fixture.home %}Home{% else %}Away{% endif %}
+{% else %}
+- Details coming soon
+{% endif %}
+
+{% with slot_text=slot_label|default:slot_name|default:"TBD" %}
+Slot:
+- {{ slot_text }}
+{% endwith %}
+{% if partner_full_name or partner_first_name or partner_last_name %}
+{% with partner_full=partner_full_name|default:"" %}
+Partner:
+- {% if partner_full %}{{ partner_full }}{% else %}{{ partner_first_name }}{% if partner_last_name %} {{ partner_last_name }}{% endif %}{% endif %}
+{% endwith %}
+{% endif %}
+
+View full details:
+{% if fixture_url %}{{ fixture_url }}
+{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}
+{% endif %}
+
+— Royals Industrial League

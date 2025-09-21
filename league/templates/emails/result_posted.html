@@ -1,0 +1,82 @@
+{% load static %}
+{% load tz %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Your match result is posted</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+      :root { color-scheme: light dark; }
+      body { margin:0; background:#f5f7fb; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+      .wrapper { max-width:560px; margin:24px auto; background:#ffffff; border-radius:12px; box-shadow:0 6px 24px rgba(20,16,48,.08); overflow:hidden; }
+      .header { padding:24px; text-align:center; background:#ffffff; }
+      .brand { height:100px; vertical-align:middle; }
+      .content { padding:24px; color:#26243a; text-align:center; }
+      h1 { margin:0 0 8px; font-size:20px; color:#5a2aa8; }
+      p { margin:0 0 12px; line-height:1.5; }
+      .button { display:inline-block; padding:12px 18px; background:#5a2aa8; color:#fff !important; text-decoration:none; border-radius:10px; font-weight:600; }
+      .muted { color:#666; font-size:12px; margin-top:16px; }
+      .footer { text-align:center; color:#888; font-size:12px; padding:16px 24px 32px; }
+      @media (prefers-color-scheme: dark) {
+        body { background:#0f0e16; }
+        .wrapper { background:#171525; box-shadow:0 6px 24px rgba(0,0,0,.4); }
+        .content { color:#e8e6f2; text-align:center; }
+        h1 { color:#bca7ff; }
+        .button { background:#bca7ff; color:#1a1333 !important; }
+        .muted, .footer { color:#b3acca; }
+        .header { background:#5a2aa8; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="header">
+        <img class="brand" src="/static/images/royal_tennis_ball.png" alt="Royals Tennis Ball logo">
+      </div>
+      <div class="content">
+        <h1>Your match result is posted</h1>
+
+        {% with greet_name=recipient.first_name|default:user.first_name|default:"there" %}
+          <p>Hi {{ greet_name }}, your match result is <strong>available</strong>.</p>
+        {% endwith %}
+
+        <p>
+          <strong>Match:</strong>
+          {% if match_dt %}
+            {{ match_dt|localtime|date:"M j, Y, g:i a" }}
+          {% elif fixture and fixture.date %}
+            {{ fixture.date|date:"M j, Y, g:i a" }}
+          {% else %}
+            Date/Time TBD
+          {% endif %}
+          {% if sub_team_name %}
+            &nbsp;playing for {{ sub_team_name }}
+          {% elif opponent %}
+            &nbsp;vs {{ opponent }}
+          {% elif fixture and fixture.opponent %}
+            &nbsp;vs {{ fixture.opponent }}
+          {% endif %}          
+          {% if fixture %} {% if fixture.home %}(Home){% else %}(Away){% endif %}{% endif %}
+        </p>
+        <p><strong>Slot:</strong>
+          {% with slot_text=slot_label|default:slot_name|default:"TBD" %}
+            {{ slot_text }}
+          {% endwith %}
+        {% if result_text %}
+          <p><strong>Final Score:</strong> {{ result_text }}</p>
+        {% endif %}
+        <p style="margin:20px 0">
+          <a class="button" href="{% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}">Match Details</a>
+        </p>
+        <p class="muted">If the button doesn’t work, copy and paste this link:<br>
+          <span style="word-break:break-all">{% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}</span>
+        </p>
+      </div>
+      <div class="logo" style="text-align:center; margin:16px 0;">
+        <img src="/static/images/royals_logo.png" alt="Royals League Logo" style="height:100px; display:block; margin:0 auto;">
+      </div>
+      <div class="footer"> Royals - Industrial League</div>
+    </div>
+  </body>
+</html>

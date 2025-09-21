@@ -1,0 +1,7 @@
+{% load tz %}
+Result posted:
+{% if match_dt %}{{ match_dt|localtime|date:"M j, g:i a" }}{% elif fixture and fixture.date %}{{ fixture.date|date:"M j, g:i a" }}{% else %}TBD{% endif %}
+{% if sub_team_name %}playing for {{ sub_team_name }}{% elif opponent %}vs {{ opponent }}{% elif fixture and fixture.opponent %}vs {{ fixture.opponent }}{% endif %}
+{% with slot_text=slot_label|default:slot_name|default:"TBD" %}Slot: {{ slot_text }}{% endwith %}
+{% if result_text %} • Final: {{ result_text }}{% endif %}
+{% if fixture_url %} {{ fixture_url }}{% else %} {{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}

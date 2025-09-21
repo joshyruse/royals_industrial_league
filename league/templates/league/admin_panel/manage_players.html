@@ -1,0 +1,100 @@
+{% extends "league/base.html" %}
+{% block content %}
+<h1 class="h4 mb-3">Manage Players</h1>
+<div class="glass-card p-3 mb-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-sm-4">
+      <label class="form-label">Search</label>
+      <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Name, username, email">
+    </div>
+    <div class="col-sm-3">
+      <label class="form-label">Status</label>
+      <select class="form-select" name="status">
+        <option value="active" {% if status != "inactive" %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status == "inactive" %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="col-sm-3">
+      <button class="btn btn-primary w-100">Filter</button>
+    </div>
+    <div class="col-sm-2 text-end">
+      <a class="btn btn-outline-primary w-100" href="{% url 'admin_player_invite' %}">Invite Player</a>
+    </div>
+  </form>
+</div>
+
+<div class="glass-card p-3">
+    <div class="table-responsive table-scroll-70">
+    <table class="table table-hover align-middle glass-table table-glass-transparent table-min-640 table-compact">
+      <thead class="table-head-glass">
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th class="text-center">Captain</th>
+          <th class="text-center">Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for u in players %}
+        <tr>
+          <td>
+            {{ u.get_full_name|default:u.username }}
+            {# Show Pending Invite only when the user has no usable password #}
+            {% if not u.password or u.password|slice:":1" == "!" %}
+              <span class="badge bg-warning text-dark ms-2">Pending Invite</span>
+            {% endif %}
+          </td>
+          <td>{{ u.username }}</td>
+          <td>{{ u.email }}</td>
+          <td class="text-center">
+            {% if u.player_profile and u.player_profile.is_captain %}
+              <span class="badge bg-success">Yes</span>
+            {% else %}
+              <span class="badge bg-secondary">No</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if u.is_active %}
+              <span class="badge bg-success">Active</span>
+            {% else %}
+              <span class="badge bg-secondary">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <div class="d-inline-flex flex-wrap gap-2">
+                {% if u.player_profile and u.player_profile.invite_token %}
+                  <form method="post" action="{% url 'admin_player_resend_invite' u.player_profile.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-primary btn-sm me-1">Resend Invite</button>
+                  </form>
+                {% elif not u.password or u.password|slice:":1" == "!" %}
+                  {% if u.player_profile %}
+                    <form method="post" action="{% url 'admin_player_resend_invite' u.player_profile.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-primary btn-sm me-1">Resend Invite</button>
+                    </form>
+                  {% else %}
+                    <span class="text-muted small me-1">No profile</span>
+                  {% endif %}
+                {% else %}
+                  <a href="{% url 'admin_player_reset_password' u.id %}" class="btn btn-outline-primary btn-sm me-1">Reset PW</a>
+                {% endif %}
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'admin_player_toggle_captain' u.id %}">
+                {% if u.player_profile and u.player_profile.is_captain %}Remove Captain{% else %}Make Captain{% endif %}
+              </a>
+              <a class="btn btn-sm btn-outline-danger" href="{% url 'admin_player_toggle_active' u.id %}">
+                {% if u.is_active %}Deactivate{% else %}Reactivate{% endif %}
+              </a>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-muted text-center">No players found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

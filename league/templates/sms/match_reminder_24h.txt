@@ -1,0 +1,1 @@
+Reminder: Royals vs {{ fixture.opponent }} tomorrow {{ match_dt|date:"D M j, g:i a" }}. Slot: {{ slot_label }}. {{ fixture_url }}

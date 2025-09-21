@@ -1,0 +1,112 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<h1 class="h4 mb-3">Admin — Lineup Builder ({{ fixture }})</h1>
+<form method="post" class="mb-3">
+  {% csrf_token %}
+  {{ formset.management_form }}
+
+  {% if form.errors or formset.non_form_errors or formset.errors %}
+    <div class="alert alert-danger">
+      <strong>There were errors:</strong>
+      {{ form.non_field_errors }}
+      {{ form.errors }}
+      {{ formset.non_form_errors }}
+      {% for f in formset %}
+        {{ f.non_field_errors }}
+        {{ f.errors }}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="row g-3">
+    <!-- Left: Slots grid -->
+    <div class="col-12 col-lg-8">
+
+      {% for left, right in form_pairs %}
+        <div class="row g-3 align-items-stretch">
+          <!-- Singles card -->
+          <div class="col-12 col-md-6">
+            <div class="glass-card p-2 lineup-card h-100">
+              {% for hidden in left.hidden_fields %}{{ hidden }}{% endfor %}
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small text-muted">Slot</div>
+                <div class="flex-grow-1 ms-2">{{ left.slot }}</div>
+              </div>
+              {% if left.slot.errors %}<div class="text-danger small mb-1">{{ left.slot.errors }}</div>{% endif %}
+
+              <div class="mb-1">
+                <div class="small text-muted">Player</div>
+                {{ left.player1 }}
+                {% if left.player1.errors %}<div class="text-danger small">{{ left.player1.errors }}</div>{% endif %}
+              </div>
+
+              {% if left.non_field_errors %}<div class="text-danger small">{{ left.non_field_errors }}</div>{% endif %}
+            </div>
+          </div>
+
+          <!-- Doubles card -->
+          <div class="col-12 col-md-6">
+            <div class="glass-card p-2 lineup-card h-100">
+              {% for hidden in right.hidden_fields %}{{ hidden }}{% endfor %}
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small text-muted">Slot</div>
+                <div class="flex-grow-1 ms-2">{{ right.slot }}</div>
+              </div>
+              {% if right.slot.errors %}<div class="text-danger small mb-1">{{ right.slot.errors }}</div>{% endif %}
+
+              <div class="row g-2">
+                <div class="col-12 col-sm-6">
+                  <div class="mb-1">
+                    <div class="small text-muted">Player 1</div>
+                    {{ right.player1 }}
+                    {% if right.player1.errors %}<div class="text-danger small">{{ right.player1.errors }}</div>{% endif %}
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <div class="mb-1">
+                    <div class="small text-muted">Player 2</div>
+                    {{ right.player2 }}
+                    {% if right.player2.errors %}<div class="text-danger small">{{ right.player2.errors }}</div>{% endif %}
+                  </div>
+                </div>
+              </div>
+
+              {% if right.non_field_errors %}<div class="text-danger small">{{ right.non_field_errors }}</div>{% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Right: Publish & Notes (sticky) -->
+    <div class="col-12 col-lg-4">
+      <div class="glass-card p-3 h-100 position-sticky" style="top: 84px;">
+        <div class="mb-2 form-check">
+          {{ form.published }} {{ form.published.label_tag }}
+          {% if form.published.errors %}
+            <div class="text-danger small">{{ form.published.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-3">
+          {{ form.notes.label_tag }}
+          {{ form.notes }}
+          {% if form.notes.errors %}
+            <div class="text-danger small">{{ form.notes.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="d-grid">
+          <button class="btn btn-primary" type="submit">Save Lineup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+<style>
+  /* Compact selects/textareas inside lineup cards without touching global theme */
+  .lineup-card select.form-select, .lineup-card select, .lineup-card textarea, .lineup-card input[type="text"] {
+    padding-top: .25rem; padding-bottom: .25rem; min-height: 2rem;
+  }
+  .lineup-card .small.text-muted { letter-spacing: .02em; }
+</style>
+{% endblock %}

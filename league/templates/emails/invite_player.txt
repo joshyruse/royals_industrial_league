@@ -1,0 +1,8 @@
+Hi {{ first_name }},
+
+You've been invited to the Royals Industrial League app.
+
+Click the link below to set your password and activate your account:
+{{ accept_url }}
+
+If you did not expect this, you can ignore this email.

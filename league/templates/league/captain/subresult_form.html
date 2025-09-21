@@ -1,0 +1,130 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-3">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <div class="glass-card p-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="h5 mb-0">{% if sr %}Edit Sub Result{% elif plan %}Record Result for Planned Sub{% else %}Add Sub Result{% endif %}</h1>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'admin_enter_scores' fixture.id %}">Back to Scores</a>
+          </div>
+
+          <div class="mb-3 small text-muted">
+            <div><strong>Fixture:</strong> {{ fixture.date|date:"M j, Y" }} — {% if fixture.home %}Home{% else %}Away{% endif %} vs {{ fixture.opponent|default:"TBD" }}</div>
+            <div><strong>Fixture Timeslot:</strong> {{ fixture.timeslot_code }}</div>
+          </div>
+
+          {% if messages %}
+            <div class="position-fixed top-0 end-0 p-3 z-1080">
+              <div id="toast-stack" class="toast-container">
+                {% for message in messages %}
+                  <div class="toast align-items-center show mb-2" role="status" aria-live="polite" aria-atomic="true" data-bs-delay="3500">
+                    <div class="toast-header">
+                      <strong class="me-auto">
+                        {% if 'success' in message.tags %}Success{% elif 'error' in message.tags or 'danger' in message.tags %}Error{% else %}Notice{% endif %}
+                      </strong>
+                      <small class="text-muted">now</small>
+                      <button type="button" class="btn-close ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                      {{ message }}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <form id="subresult-form"
+                action="{{ request.get_full_path }}"
+                method="post" novalidate>
+            {% csrf_token %}
+            {% if plan %}
+              <input type="hidden" name="plan" value="{{ plan.id }}">
+            {% endif %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="id_player">Player</label>
+                {{ form.player }}
+                {% if form.player.errors %}<div class="text-danger small">{{ form.player.errors }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label" for="id_timeslot">Timeslot</label>
+                {{ form.timeslot }}
+                <div class="form-text">One booking per player per timeslot.</div>
+                {% if form.timeslot.errors %}<div class="text-danger small">{{ form.timeslot.errors }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label" for="id_slot_code">Slot</label>
+                {{ form.slot_code }}
+                <div class="form-text">S1–S3 (Singles) or D1–D3 (Doubles). Type auto-set from slot.</div>
+                {% if form.slot_code.errors %}<div class="text-danger small">{{ form.slot_code.errors }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label" for="id_kind">Type</label>
+                {{ form.kind }}
+                <div class="form-text">This adjusts automatically when you choose a slot.</div>
+                {% if form.kind.errors %}<div class="text-danger small">{{ form.kind.errors }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label" for="id_target_type">Target</label>
+                {{ form.target_type }}
+                {% if form.target_type.errors %}<div class="text-danger small">{{ form.target_type.errors }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label" for="id_target_team_name">Target Team Name</label>
+                {{ form.target_team_name }}
+                <div class="form-text">If "Against Us" is selected, this will auto-fill with {{ fixture.opponent|default:"the opponent" }}.</div>
+                {% if form.target_team_name.errors %}<div class="text-danger small">{{ form.target_team_name.errors }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label" for="id_result">Result</label>
+                {{ form.result }}
+                {% if form.result.errors %}<div class="text-danger small">{{ form.result.errors }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label" for="id_home_games">Home Games</label>
+                {{ form.home_games }}
+                {% if form.home_games.errors %}<div class="text-danger small">{{ form.home_games.errors }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label" for="id_away_games">Away Games</label>
+                {{ form.away_games }}
+                {% if form.away_games.errors %}<div class="text-danger small">{{ form.away_games.errors }}</div>{% endif %}
+              </div>
+
+              <div class="col-12">
+                <label class="form-label" for="id_notes">Notes</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}<div class="text-danger small">{{ form.notes.errors }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-4">
+              <a class="btn btn-outline-secondary" href="{% url 'admin_enter_scores' fixture.id %}">Cancel</a>
+              <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/subresult_form.js' %}" defer></script>
+{% endblock %}

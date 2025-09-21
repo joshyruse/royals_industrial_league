@@ -1,0 +1,389 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<h1 class="h4 mb-3">Admin — Manage Schedule</h1>
+
+<form method="get" action="{% url 'admin_manage_schedule' %}" class="mb-3">
+  <input type="hidden" name="page" value="">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label">Season</label>
+      <select name="season" class="form-select w-auto minw-220 theme-select" id="season-select">
+        {% for s in seasons %}
+          <option value="{{ s.id }}" {% if selected and s.id == selected.id %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+        <option value="__create__">+ Create New Season…</option>
+      </select>
+    </div>
+    <div class="col-auto d-flex align-items-end">
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="active_season_toggle" id="active-season-radio"
+               {% if selected and selected.is_active %}data-active-now="true" {% else %}data-active-now="false"{% endif %}
+               {% if selected and selected.is_active %}checked{% endif %}
+               {% if not selected %}disabled{% endif %}>
+        <label class="form-check-label" for="active-season-radio">Active</label>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if selected %}
+  <div class="glass-card p-0 overflow-hidden">
+    <div class="p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h6 mb-0">Matches</h2>
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-secondary{% if not selected %} disabled{% endif %}"
+             href="{% url 'admin_schedule_export_csv' %}{% if selected %}?season={{ selected.id }}{% endif %}"
+             role="button"{% if not selected %} aria-disabled="true" tabindex="-1"{% endif %}>
+            Download CSV
+          </a>
+          <button class="btn btn-sm btn-outline-secondary"
+                  data-bs-toggle="modal" data-bs-target="#bulkUploadModal"{% if not selected %} disabled{% endif %}>
+            Bulk Upload
+          </button>
+          <button class="btn btn-sm btn-outline-danger"
+                  data-bs-toggle="modal" data-bs-target="#deleteAllModal"{% if not fixtures %} disabled{% endif %}>
+            Delete All
+          </button>
+          <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">+ Add Match</button>
+        </div>
+      </div>
+
+      {% if messages %}
+        {% for m in messages %}
+          <div class="alert alert-{{ m.tags }} py-2 mb-2">{{ m }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="table-responsive table-scroll-70">
+          <table class="table table-sm align-middle mb-0 glass-table table-min-640 table-glass-transparent table-hover">
+          <thead class="table-head-glass">
+            <tr>
+              <th scope="col" class="w-10">Week</th>
+              <th scope="col" class="w-25">Date</th>
+              <th scope="col" class="w-15">Time</th>
+              <th scope="col">Opponent</th>
+              <th scope="col" class="w-22"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in fixtures %}
+              <tr>
+                <td>{{ f.week_number }}</td>
+                <td>{{ f.date|date:"D M j, Y" }}</td>
+                <td>{{ f.date|date:"g:i a" }}</td>
+                <td>
+                  {% if f.is_bye %}
+                    <span class="badge bg-secondary">BYE</span>
+                  {% else %}
+                    {% if f.home %}vs{% else %}@{% endif %} {{ f.opponent }}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary"
+                            data-bs-toggle="modal" data-bs-target="#editModal"
+                            data-id="{{ f.id }}"
+                            data-week="{{ f.week_number }}"
+                            data-datetime="{{ f.date|date:'Y-m-d\\TH:i' }}"
+                            data-opponent="{{ f.opponent }}"
+                            data-home="{{ f.home|yesno:'true,false' }}"
+                            data-bye="{{ f.is_bye|yesno:'true,false' }}">
+                      Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            data-bs-toggle="modal" data-bs-target="#deleteModal"
+                            data-id="{{ f.id }}">
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-muted">No matches yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Set Active Modal -->
+  <div class="modal fade" id="confirmActiveModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post" action="{% url 'admin_manage_schedule' %}{% if selected %}?season={{ selected.id }}{% endif %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="set_active">
+          {% if selected %}<input type="hidden" name="season_id" value="{{ selected.id }}">{% endif %}
+          <div class="modal-header">
+            <h5 class="modal-title">Make Season Active</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {% if current_active %}
+              <p class="mb-2">Current active season: <strong>{{ current_active }}</strong>.</p>
+              <p class="mb-0">This will clear the current active season and set <strong>{% if selected %}{{ selected }}{% else %}this season{% endif %}</strong> as active. Continue?</p>
+            {% else %}
+              <p class="mb-0">Set <strong>{% if selected %}{{ selected }}{% else %}this season{% endif %}</strong> as the active season?</p>
+            {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary">Yes, make active</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Modal -->
+  <div class="modal fade" id="addModal"{% if add_form and add_form.errors %} data-has-errors="1"{% endif %} tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post" action="{% url 'admin_manage_schedule' %}?season={{ selected.id }}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create">
+          <input type="hidden" name="season" value="{{ selected.id }}">
+          <div class="modal-header">
+            <h5 class="modal-title">Add Match</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {% if add_form.non_field_errors %}
+              <div class="alert alert-danger py-2">{{ add_form.non_field_errors }}</div>
+            {% endif %}
+            <div class="mb-2">
+              {{ add_form.week_number.label_tag }} {{ add_form.week_number }}
+              {{ add_form.week_number.errors }}
+            </div>
+            <div class="mb-2">
+              {{ add_form.date.label_tag }} {{ add_form.date }}
+              {{ add_form.date.errors }}
+            </div>
+            <div class="mb-2">
+              {{ add_form.opponent.label_tag }} {{ add_form.opponent }}
+              {{ add_form.opponent.errors }}
+            </div>
+            <div class="form-check form-switch mb-2">
+              {{ add_form.home }} <label class="form-check-label ms-1" for="id_home">Home match</label>
+              {{ add_form.home.errors }}
+            </div>
+            <div class="form-check form-switch mb-2">
+              {{ add_form.is_bye }} <label class="form-check-label ms-1" for="id_is_bye">Bye week</label>
+              {{ add_form.is_bye.errors }}
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal fade" id="editModal"{% if edit_form and edit_form.errors and edit_fixture_id %} data-edit-fixture-id="{{ edit_fixture_id }}"{% endif %} tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post" action="{% url 'admin_manage_schedule' %}?season={{ selected.id }}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update">
+          <input type="hidden" name="season" value="{{ selected.id }}">
+          <input type="hidden" name="fixture_id" id="edit-fixture-id">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Match</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {% if edit_form %}
+              {% if edit_form.non_field_errors %}
+                <div class="alert alert-danger py-2">{{ edit_form.non_field_errors }}</div>
+              {% endif %}
+              <div class="mb-2">
+                {{ edit_form.week_number.label_tag }} {{ edit_form.week_number }}
+                {{ edit_form.week_number.errors }}
+              </div>
+              <div class="mb-2">
+                {{ edit_form.date.label_tag }} {{ edit_form.date }}
+                {{ edit_form.date.errors }}
+              </div>
+              <div class="mb-2">
+                {{ edit_form.opponent.label_tag }} {{ edit_form.opponent }}
+                {{ edit_form.opponent.errors }}
+              </div>
+              <div class="form-check form-switch mb-2">
+                {{ edit_form.home }} <label class="form-check-label ms-1" for="edit-home">Home match</label>
+                {{ edit_form.home.errors }}
+              </div>
+              <div class="form-check form-switch mb-2">
+                {{ edit_form.is_bye }} <label class="form-check-label ms-1" for="edit-is-bye">Bye week</label>
+                {{ edit_form.is_bye.errors }}
+              </div>
+            {% else %}
+              <div class="mb-2">
+                <label class="form-label" for="edit-week">Week</label>
+                <input type="number" class="form-control" min="1" name="week_number" id="edit-week">
+              </div>
+              <div class="mb-2">
+                <label class="form-label" for="edit-date">Date &amp; Time</label>
+                <input type="datetime-local" class="form-control" name="date" id="edit-date">
+              </div>
+              <div class="mb-2">
+                <label class="form-label" for="edit-opponent">Opponent</label>
+                <input type="text" class="form-control" name="opponent" id="edit-opponent">
+              </div>
+              <div class="form-check form-switch mb-2">
+                <input type="checkbox" class="form-check-input" name="home" id="edit-home">
+                <label class="form-check-label ms-1" for="edit-home">Home match</label>
+              </div>
+              <div class="form-check form-switch mb-2">
+                <input type="checkbox" class="form-check-input" name="is_bye" id="edit-is-bye">
+                <label class="form-check-label ms-1" for="edit-is-bye">Bye week</label>
+              </div>
+            {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post" action="{% url 'admin_manage_schedule' %}?season={{ selected.id }}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete">
+          <input type="hidden" name="season" value="{{ selected.id }}">
+          <input type="hidden" name="fixture_id" id="delete-fixture-id">
+          <div class="modal-header">
+            <h5 class="modal-title">Delete Match</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">Are you sure you want to delete this match?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-danger">Delete</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete All Modal -->
+  <div class="modal fade" id="deleteAllModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post" action="{% url 'admin_manage_schedule' %}?season={{ selected.id }}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete_all">
+          <input type="hidden" name="season" value="{{ selected.id }}">
+          <div class="modal-header">
+            <h5 class="modal-title">Delete ALL Matches</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-2">This will permanently delete <strong>all matches</strong> for <strong>{{ selected }}</strong> and any associated data (lineups, lineup slots, and player availability for those matches).</p>
+            <p class="mb-0">This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-danger"{% if not fixtures %} disabled{% endif %}>Delete All</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Upload Modal -->
+  <div class="modal fade" id="bulkUploadModal"{% if bulk_errors %} data-has-errors="1"{% endif %} tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form method="post" enctype="multipart/form-data" action="{% url 'admin_manage_schedule' %}?season={{ selected.id }}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="bulk_upload">
+          <input type="hidden" name="season" value="{{ selected.id }}">
+          <div class="modal-header">
+            <h5 class="modal-title">Bulk Upload Matches (CSV)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {% if bulk_errors %}
+              <div class="alert alert-danger">
+                <div class="fw-bold mb-1">Errors found — nothing was saved:</div>
+                <ul class="mb-0">
+                  {% for err in bulk_errors %}
+                    <li>{{ err }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            <div class="mb-3">
+              <label class="form-label" for="csv-file">CSV file</label>
+              <input type="file" class="form-control" id="csv-file" name="csv_file" accept=".csv" required>
+              <div class="form-text">Upload a CSV with columns: <code>week_number,date,time,opponent,home,bye</code></div>
+            </div>
+            <div class="glass-card p-2">
+  <div class="d-flex justify-content-between align-items-center mb-1">
+    <div class="small text-muted">Example CSV (first row is headers):</div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-primary" id="copy-csv-example">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="download-csv-example">Download</button>
+    </div>
+  </div>
+  <pre class="mb-0 user-select-all white-space" id="csv-example">week_number,date,time,opponent,home,bye
+1,2025-01-10,18:30,Acme Rockets,true,false
+2,2025-01-17,19:00,Blue Bears,false,false
+3,2025-01-24,18:30,Spartans,true,false</pre>
+</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary">Upload</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Season Modal -->
+  <div class="modal fade" id="createSeasonModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post" action="{% url 'admin_manage_schedule' %}{% if selected %}?season={{ selected.id }}{% endif %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create_season">
+          <div class="modal-header">
+            <h5 class="modal-title">Create New Season</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2">
+              <label class="form-label" for="season-name">Season Name</label>
+              <input type="text" class="form-control" name="season_name" id="season-name" placeholder="e.g., 2025 Industrial League" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label" for="season-year">Year</label>
+              <input type="number" class="form-control" name="season_year" id="season-year" min="2000" max="2100" placeholder="e.g., 2025" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-primary">Create</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+ <script src="{% static 'js/manage_schedule.js' %}" defer></script>
+{% endif %}
+{% endblock %}

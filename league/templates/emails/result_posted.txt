@@ -1,0 +1,20 @@
+{% load tz %}
+{% with greet_name=recipient.first_name|default:user.first_name|default:"there" %}
+Hi {{ greet_name }},
+{% endwith %}
+
+Your match result is available.
+
+Match:
+- Date/Time:
+  {% if match_dt %}{{ match_dt|localtime|date:"M j, Y, g:i a" }}{% elif fixture and fixture.date %}{{ fixture.date|date:"M j, Y, g:i a" }}{% else %}TBD{% endif %}
+- {% if sub_team_name %}Team: playing for {{ sub_team_name }}{% else %}Opponent: {% if opponent %}{{ opponent }}{% elif fixture and fixture.opponent %}{{ fixture.opponent }}{% else %}TBD{% endif %}{% endif %}
+{% if fixture %}- Venue: {% if fixture.home %}Home{% else %}Away{% endif %}{% endif %}
+- Slot: {% with slot_text=slot_label|default:slot_name|default:"TBD" %}{{ slot_text }}{% endwith %}
+
+{% if result_text %}
+Final Score: {{ result_text }}
+{% endif %}
+
+Details:
+{% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}

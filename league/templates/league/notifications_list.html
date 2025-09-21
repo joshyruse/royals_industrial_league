@@ -1,0 +1,129 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-4">
+  {% if messages %}
+    <div class="position-fixed bottom-0 end-0 p-3 z-1080">
+      <div id="toast-stack">
+        {% for message in messages %}
+          <div class="toast align-items-center show mb-2" role="status" aria-live="polite" aria-atomic="true" data-bs-delay="3500">
+            <div class="toast-header">
+              <strong class="me-auto">
+                {% if 'success' in message.tags %}Success{% elif 'error' in message.tags or 'danger' in message.tags %}Error{% else %}Notice{% endif %}
+              </strong>
+              <small class="text-muted">now</small>
+              <button type="button" class="btn-close ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+              {{ message }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+  <h2 class="mb-3">Notifications</h2>
+
+  <!-- Tabs / filters -->
+  <ul class="nav nav-pills mb-3">
+    <li class="nav-item">
+      <a class="nav-link {% if status == 'unread' %}active{% endif %}"
+         href="{% url 'notifications_list' %}?status=unread">
+        Unread <span class="badge text-bg-primary ms-1">{{ unread_count }}</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if status == 'read' %}active{% endif %}"
+         href="{% url 'notifications_list' %}?status=read">
+        Read <span class="badge bg-secondary ms-1">{{ read_count }}</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if status == 'all' %}active{% endif %}"
+         href="{% url 'notifications_list' %}?status=all">
+        All <span class="badge bg-secondary ms-1">{{ all_count }}</span>
+      </a>
+    </li>
+  </ul>
+
+  <form method="post" class="glass-card p-0 overflow-hidden">
+    {% csrf_token %}
+    <div class="card-body p-0">
+      {% if page_obj.object_list %}
+        <div class="table-responsive table-scroll-70">
+          <table class="table mb-0 align-middle glass-table table-glass-transparent">
+            <thead class="table-head-glass">
+              <tr>
+                <th scope="col" class="w-2-25rem"><input type="checkbox" id="chk-all"></th>
+                <th scope="col">Title</th>
+                <th scope="col">Message</th>
+                <th scope="col" class="w-9rem">When</th>
+                <th scope="col" class="w-6rem">Status</th>
+                <th scope="col" class="w-6rem"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in page_obj.object_list %}
+              <tr class="{% if not r.read_at %}table-active{% endif %}">
+                <td><input type="checkbox" name="ids" value="{{ r.id }}" class="chk-row"></td>
+                <td class="fw-semibold">{{ r.notification.title }}</td>
+                <td class="text-muted">{{ r.notification.body }}</td>
+                <td class="text-nowrap small">
+                  {{ r.created_at|date:"M d, Y" }}<br>
+                  <span class="text-muted">{{ r.created_at|date:"g:i A" }}</span>
+                </td>
+                <td>
+                  {% if r.read_at %}
+                    <span class="badge text-bg-secondary">Read</span>
+                  {% else %}
+                    <span class="badge text-bg-primary">Unread</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a class="btn btn-sm btn-outline-primary"
+                     href="{% url 'notification_go' r.id %}">Open</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-4 text-center text-muted">No notifications here.</div>
+      {% endif %}
+    </div>
+
+    <div class="card-footer d-flex justify-content-between align-items-center p-3">
+      <div class="d-flex gap-2">
+        <button name="action" value="mark_read" class="btn btn-sm btn-primary">Mark read</button>
+        <button name="action" value="mark_unread" class="btn btn-sm btn-outline-secondary">Mark unread</button>
+      </div>
+
+      <!-- Pagination -->
+      <nav>
+        <ul class="pagination mb-0">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?status={{ status }}&page={{ page_obj.previous_page_number }}">«</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">«</span></li>
+          {% endif %}
+
+          <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?status={{ status }}&page={{ page_obj.next_page_number }}">»</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">»</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </form>
+</div>
+
+<script src="{% static 'js/notifications_list.js' %}" defer></script>
+{% endblock %}

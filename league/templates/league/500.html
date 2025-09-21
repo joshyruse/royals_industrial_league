@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - Royals Industrial League{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <h1 class="display-4 text-danger">500</h1>
+  <p class="lead">Something went wrong on our side.</p>
+  <p class="text-muted">We’ve logged the error and will look into it.</p>
+  <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Back to Dashboard</a>
+</div>
+{% endblock %}

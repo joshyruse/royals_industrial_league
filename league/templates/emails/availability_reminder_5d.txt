@@ -1,0 +1,14 @@
+Hi {{ first_name|default:user.first_name|default:"Player" }},
+
+We haven’t received your availability yet for the upcoming match:
+
+  • Opponent: {{ fixture.opponent }}
+  • Date: {{ match_dt|date:"D M j, g:i a" }}
+  • Location: {% if fixture.home %}Home{% else %}Away{% endif %}
+
+Please log in and set your availability as soon as possible:
+
+{{ fixture_url }}
+
+Thanks,
+Royals Industrial League

@@ -1,0 +1,182 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+{% if is_bye %}
+  <div class="alert alert-info">Bye week — regular availability is not applicable. Sub Availability is shown below.</div>
+{% endif %}
+<h1 class="h4 mb-1">Admin — Availability Matrix ({{ fixture }})</h1>
+<div class="mb-3">
+  <a href="{% url 'captain_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+    ← Back to Captain Dashboard
+  </a>
+</div>
+{% if not is_bye %}
+  <div class="glass-card p-0 overflow-hidden mb-3">
+    <div class="table-responsive table-scroll-70">
+      <table class="table table-hover align-middle mb-0 glass-table table-glass-transparent table-min-640 table-compact">
+        <thead class="table-head-glass">
+          <tr>
+            <th scope="col">Player</th>
+            <th scope="col">Status</th>
+            <th scope="col">Note</th>
+            <th scope="col">Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for a in rows %}
+          <tr>
+            <td>{{ a.player }}</td>
+            <td>{{ a.get_status_display }}</td>
+            <td>{{ a.note }}</td>
+            <td>{{ a.updated_at|date:"M j, g:i a" }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+
+<hr class="my-4">
+
+<h5 class="mb-3">Sub Availability</h5>
+{% if sub_matrix_rows %}
+  <div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive table-scroll-70">
+      <table class="table table-hover align-middle mb-0 glass-table table-glass-transparent table-min-640 table-compact">
+        <thead class="table-head-glass">
+          <tr>
+            <th scope="col">Player</th>
+            <th scope="col" class="text-center">08:30 <span class="text-muted small" id="cnt-0830"></span></th>
+            <th scope="col" class="text-center">10:00 <span class="text-muted small" id="cnt-1000"></span></th>
+            <th scope="col" class="text-center">11:30 <span class="text-muted small" id="cnt-1130"></span></th>
+          </tr>
+        </thead>
+        <tbody>
+    {% for r in sub_matrix_rows %}
+      <tr data-pid="{{ r.player.id }}" data-a0830="{{ r.a0830|yesno:'1,0' }}" data-a1000="{{ r.a1000|yesno:'1,0' }}" data-a1130="{{ r.a1130|yesno:'1,0' }}">
+        <td>
+          {{ r.player.first_name }} {{ r.player.last_name }}
+        </td>
+
+        {# 08:30 cell #}
+        <td class="text-center">
+          {% if r.p0830 %}
+            <span class="badge bg-primary-subtle text-primary" title="Sub already planned">sub ✓</span>
+          {% elif r.b0830 %}
+            <span class="badge bg-warning text-dark" title="Busy (in lineup at this timeslot)">busy</span>
+          {% elif r.a0830 %}
+            <span class="badge bg-success-subtle text-success me-2">Yes</span>
+            <button type="button" class="btn btn-link btn-sm p-0 align-baseline plan-sub-link"
+                    data-player="{{ r.player.id }}" data-timeslot="0830"
+                    data-bs-toggle="modal" data-bs-target="#planSubModal">Plan sub</button>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+
+        {# 10:00 cell #}
+        <td class="text-center">
+          {% if r.p1000 %}
+            <span class="badge bg-primary-subtle text-primary" title="Sub already planned">sub ✓</span>
+          {% elif r.b1000 %}
+            <span class="badge bg-warning text-dark" title="Busy (in lineup at this timeslot)">busy</span>
+          {% elif r.a1000 %}
+            <span class="badge bg-success-subtle text-success me-2">Yes</span>
+            <button type="button" class="btn btn-link btn-sm p-0 align-baseline plan-sub-link"
+                    data-player="{{ r.player.id }}" data-timeslot="1000"
+                    data-bs-toggle="modal" data-bs-target="#planSubModal">Plan sub</button>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+
+        {# 11:30 cell #}
+        <td class="text-center">
+          {% if r.p1130 %}
+            <span class="badge bg-primary-subtle text-primary" title="Sub already planned">sub ✓</span>
+          {% elif r.b1130 %}
+            <span class="badge bg-warning text-dark" title="Busy (in lineup at this timeslot)">busy</span>
+          {% elif r.a1130 %}
+            <span class="badge bg-success-subtle text-success me-2">Yes</span>
+            <button type="button" class="btn btn-link btn-sm p-0 align-baseline plan-sub-link"
+                    data-player="{{ r.player.id }}" data-timeslot="1130"
+                    data-bs-toggle="modal" data-bs-target="#planSubModal">Plan sub</button>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="text-muted">No sub availability submitted yet.</div>
+{% endif %}
+
+<a class="btn btn-outline-primary" href="{% url 'admin_lineup_builder' fixture.id %}">Open Lineup Builder</a>
+<a class="btn btn-outline-secondary ms-2" href="{% url 'fixture_detail' fixture.id %}">View Match Details</a>
+
+<!-- Plan Sub Modal -->
+    <span id="fixture-opponent-name" data-opp="{{ fixture.opponent|default:'Opponent' }}" hidden></span>
+<div class="modal fade" id="planSubModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Plan Sub</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="planSubForm">
+          {% csrf_token %}
+          <input type="hidden" name="player_id" id="ps-player">
+          <input type="hidden" name="timeslot" id="ps-timeslot">
+            <div class="mb-2">
+              <label class="form-label">Slot</label>
+              <select class="form-select" id="ps-slot" name="slot_code">
+                <option value="">— Select —</option>
+                <option value="S1">Singles 1</option>
+                <option value="S2">Singles 2</option>
+                <option value="S3">Singles 3</option>
+                <option value="D1">Doubles 1</option>
+                <option value="D2">Doubles 2</option>
+                <option value="D3">Doubles 3</option>
+              </select>
+            </div>
+            
+            <!-- Target + Target Team -->
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label">Target</label>
+                <select class="form-select" id="ps-target" name="target_type">
+                  <option value="OTHER_TEAM">Other Team</option>
+                  <option value="AGAINST_US">Against Us</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Target Team</label>
+                <input type="text" class="form-control" id="ps-target-team" name="target_team_name" placeholder="Opponent name">
+                <div class="form-text">Auto-fills to our opponent if “Against Us”.</div>
+              </div>
+            </div>
+          <div class="mb-3">
+            <label for="ps-notes" class="form-label">Notes (optional)</label>
+            <textarea class="form-control" id="ps-notes" name="notes" rows="2"></textarea>
+          </div>
+        </form>
+        <div class="text-danger small d-none" id="ps-error"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="ps-save">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Resolved URLs for external JS (read by availability_matrix.js) -->
+<div id="subplan-config"
+     data-create-url="{% url 'subplan_create' fixture.id %}"></div>
+<script src="{% static 'js/availability_matrix.js' %}" defer></script>
+{% endblock %}

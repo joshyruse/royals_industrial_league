@@ -1,0 +1,12 @@
+{% with greet_name=first_name|default:player_first_name|default:recipient.first_name|default:user.first_name|default:player.user.first_name|default:"Player" %}
+{% with slot_text=slot_label|default:slot_name|default:"TBD" %}
+{{ greet_name }}: You’re in the Royals lineup — {{ slot_text }}.
+{% if partner_full_name or partner_first_name or partner_last_name %}
+{% with partner_full=partner_full_name|default:"" %}
+Partner: {% if partner_full %}{{ partner_full }}{% else %}{{ partner_first_name }}{% if partner_last_name %} {{ partner_last_name }}{% endif %}{% endif %}
+{% endwith %}
+{% endif %}
+{% endwith %}
+{% endwith %}
+{% if fixture %}{{ fixture.pretty_date|default:fixture.date }}{% if fixture.time %} @ {{ fixture.time }}{% endif %}{% if fixture.opponent %} vs {{ fixture.opponent }}{% endif %} ({% if fixture.home %}Home{% else %}Away{% endif %}).{% endif %}
+Details: {% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}

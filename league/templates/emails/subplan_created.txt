@@ -1,0 +1,22 @@
+{% load tz %}
+{% with greet_name=recipient.first_name|default:user.first_name|default:"there" %}
+Hi {{ greet_name }},
+{% endwith %}
+
+You’ve been assigned to sub.
+
+Match:
+- Date: {% if match_dt %}{{ match_dt|localtime|date:"D M j" }}{% elif fixture %}{{ fixture.date|date:"D M j" }}{% else %}TBD{% endif %}
+- Time: {% if timeslot %}{{ timeslot|slice:"0:2" }}:{{ timeslot|slice:"2:4" }}{% elif match_dt %}{{ match_dt|localtime|date:"g:i a" }}{% else %}TBD{% endif %}
+- Team: {% if target_team_name %}{{ target_team_name }}{% elif sub_team_name %}{{ sub_team_name }}{% else %}TBD{% endif %}
+{% if fixture %}- Slot: {% with slot_text=slot_label|default:slot_name|default:"TBD" %}{{ slot_text }}{% endwith %} {% if fixture.home %}(Home){% else %}(Away){% endif %}{% else %}- Slot: {% with slot_text=slot_label|default:slot_name|default:"TBD" %}{{ slot_text }}{% endwith %}{% endif %}
+
+{% if partner_full_name or partner_first_name or partner_last_name %}
+Partner: {% if partner_full_name %}{{ partner_full_name }}{% else %}{{ partner_first_name }}{% if partner_last_name %} {{ partner_last_name }}{% endif %}{% endif %}
+{% endif %}
+
+{% if notes %}
+Notes: {{ notes }}
+{% endif %}
+
+Details: {% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}

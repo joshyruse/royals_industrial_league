@@ -1,0 +1,2 @@
+Royals code: {{ code }}. Expires in 10 minutes.
+Reply STOP to opt out, HELP for help. Msg&data rates may apply.

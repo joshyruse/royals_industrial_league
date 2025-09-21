@@ -1,0 +1,250 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Admin · Manage Roster</h1>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#copyRosterModal" {% if not selected %}disabled{% endif %}>Copy From</button>
+      <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPlayerModal" {% if not selected %}disabled{% endif %}>+ Add Player</button>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="glass-card mb-3">
+    <div class="card-body p-3">
+      <div class="row g-3 align-items-start">
+        <div class="col-sm-6 col-md-5 col-lg-4">
+          <form method="get" class="mb-0">
+            <label class="form-label">Season</label>
+            <select name="season" class="form-select w-auto minw-220 theme-select" id="season-select">
+              {% for s in seasons %}
+                <option value="{{ s.id }}" {% if selected and s.id == selected.id %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+        <div class="col-sm-4 col-md-3 col-lg-2">
+          <form method="post" id="roster-limit-form" action="{% url 'admin_manage_roster' %}{% if selected %}?season={{ selected.id }}{% endif %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="set_limit">
+            <label class="form-label">Roster Size Limit
+              <span class="badge rounded-pill bg-light border text-muted ms-1 align-middle cursor-pointer"
+                    role="button" tabindex="0"
+                    data-bs-toggle="tooltip" data-bs-placement="right" data-bs-container="body"
+                    data-bs-title="Max players for this season.">i</span>
+            </label>
+            <input type="number" class="form-control" id="roster-limit-input" name="limit" min="1" max="40"
+                   value="{{ selected.roster_limit|default:22 }}">
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass-card p-0 overflow-hidden">
+    <div class="card-body p-0">
+      <div class="table-responsive table-scroll-70">
+        <table class="table table-sm table-hover align-middle mb-0 glass-table table-glass-transparent">
+          <thead class="table-head-glass">
+            <tr>
+              <th scope="col">First</th>
+              <th scope="col">Last</th>
+              <th scope="col">NTRP</th>
+              <th scope="col">Email</th>
+              <th scope="col">Phone</th>
+              <th scope="col">Captain</th>
+              <th scope="col" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if roster_entries %}
+              {% for e in roster_entries %}
+                <tr>
+                  <td>{{ e.player.first_name }}</td>
+                  <td>{{ e.player.last_name }}</td>
+                  <td>
+                    <form method="post" class="d-inline" action="{% url 'admin_manage_roster' %}{% if selected %}?season={{ selected.id }}{% endif %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="update_ntrp">
+                      <input type="hidden" name="entry_id" value="{{ e.id }}">
+                      <select name="ntrp" class="form-select form-select-sm js-ntrp">
+                        <option value="3.0" {% if e.ntrp == "3.0" %}selected{% endif %}>3.0</option>
+                        <option value="3.5" {% if e.ntrp == "3.5" %}selected{% endif %}>3.5</option>
+                        <option value="4.0" {% if e.ntrp == "4.0" %}selected{% endif %}>4.0</option>
+                        <option value="4.5" {% if e.ntrp == "4.5" %}selected{% endif %}>4.5</option>
+                        <option value="5.0" {% if e.ntrp == "5.0" %}selected{% endif %}>5.0</option>
+                        <option value="5.5" {% if e.ntrp == "5.5" %}selected{% endif %}>5.5</option>
+                        <option value="6.0" {% if e.ntrp == "6.0" %}selected{% endif %}>6.0</option>
+                        <option value="6.5" {% if e.ntrp == "6.5" %}selected{% endif %}>6.5</option>
+                        <option value="7.0" {% if e.ntrp == "7.0" %}selected{% endif %}>7.0</option>
+                      </select>
+                    </form>
+                  </td>
+                  <td>{{ e.player.email }}</td>
+                  <td>
+                    {% with prefs=e.player.user.notificationpreference %}
+                      {% if prefs.phone_verified_at and prefs.phone_e164 %}
+                          {{ prefs.phone_e164 }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      {% endwith %}
+                  </td>
+                  <td>
+                    {% if e.is_captain or e.player.is_captain %}
+                      <span class="badge bg-primary">Captain</span>
+                      {% if e.player.is_captain and not e.is_captain %}
+                        <span class="badge text-bg-light border ms-1">Global</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <button class="btn btn-sm btn-outline-danger"
+                            data-bs-toggle="modal" data-bs-target="#removeModal"
+                            data-entry-id="{{ e.id }}"
+                            data-player-name="{{ e.player.first_name }} {{ e.player.last_name }}">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="7" class="text-center text-muted py-3">No players on this season's roster yet.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Copy From Modal -->
+<div class="modal fade" id="copyRosterModal"{% if copy_errors %} data-has-errors="1"{% endif %} tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'admin_manage_roster' %}{% if selected %}?season={{ selected.id }}{% endif %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="copy_from">
+        <div class="modal-header">
+          <h5 class="modal-title">Copy Roster From Previous Season</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          {% if copy_errors %}
+            <div class="alert alert-danger">
+              <ul class="mb-0">
+                {% for err in copy_errors %}<li>{{ err }}</li>{% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+          <div class="mb-2">
+            <label class="form-label">Source season</label>
+            <select class="form-select" name="source_season_id" required>
+              {% for s in copy_source_seasons %}
+                <option value="{{ s.id }}">{{ s }}</option>
+              {% empty %}
+                <option disabled>No seasons with rosters to copy</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-text">We’ll copy players and their NTRP values into <strong>{% if selected %}{{ selected }}{% else %}this season{% endif %}</strong>. Existing players in the target season are skipped. The season roster size limit will be enforced.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" {% if not copy_source_seasons %}disabled{% endif %}>Copy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Player Modal -->
+<div class="modal fade" id="addPlayerModal"{% if add_errors %} data-has-errors="1"{% endif %} tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'admin_manage_roster' %}{% if selected %}?season={{ selected.id }}{% endif %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Player to Roster</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          {% if add_errors %}
+            <div class="alert alert-danger">
+              <ul class="mb-0">
+                {% for err in add_errors %}<li>{{ err }}</li>{% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+          <div class="mb-2">
+            <label class="form-label">Player</label>
+            <select class="form-select" name="player_id" required>
+              {% for p in available_players %}
+                <option value="{{ p.id }}">{{ p.first_name }} {{ p.last_name }} — {{ p.email }}</option>
+              {% empty %}
+                <option disabled>No available players to add</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">NTRP Ranking</label>
+            <select class="form-select" name="ntrp" required>
+              <option value="3.0">3.0</option>
+              <option value="3.5">3.5</option>
+              <option value="4.0">4.0</option>
+              <option value="4.5">4.5</option>
+              <option value="5.0">5.0</option>
+              <option value="5.5">5.5</option>
+              <option value="6.0">6.0</option>
+              <option value="6.5">6.5</option>
+              <option value="7.0">7.0</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" {% if roster_entries|length >= selected.roster_limit|default:22 %}disabled{% endif %}>Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Player Modal -->
+<div class="modal fade" id="removeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'admin_manage_roster' %}{% if selected %}?season={{ selected.id }}{% endif %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="entry_id" id="remove-entry-id">
+        <div class="modal-header">
+          <h5 class="modal-title">Remove Player</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">Are you sure you want to remove <strong id="remove-player-name">this player</strong> from the roster?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-danger">Remove</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/manage_roster.js' %}" defer></script>
+
+{% endblock %}

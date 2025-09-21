@@ -1,0 +1,1 @@
+Reminder: Please submit your availability for Royals vs {{ fixture.opponent }} on {{ match_dt|date:"D M j, g:i a" }}. {{ fixture_url }}

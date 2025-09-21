@@ -1,0 +1,110 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">My Results{% if selected %} — {{ selected }}{% endif %}</h1>
+    <form method="get" class="mb-0 d-flex align-items-center gap-2">
+      <label for="season-select" class="form-label me-2 mb-0">Season</label>
+      {% if seasons %}
+        <select id="season-select" name="season" class="form-select form-select-sm d-inline-block w-auto minw-220 theme-select">
+          {% for s in seasons %}
+            <option value="{{ s.id }}" {% if selected and s.id == selected.id %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      {% else %}
+        <select id="season-select" class="form-select form-select-sm d-inline-block w-auto minw-220 theme-select" disabled>
+          <option>(no seasons)</option>
+        </select>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  {% if not selected %}
+    <div class="alert alert-info">No season selected or no history yet.</div>
+  {% endif %}
+
+  <div class="glass-card p-0">
+    <div class="card-body p-0">
+      {% if has_sub_rows %}
+      <div class="p-2 border-bottom small text-muted">
+        <span class="badge text-bg-info me-1">Sub</span> indicates results from matches you subbed for other teams. These points count toward your season total.
+      </div>
+      {% endif %}
+      <div class="rounded-3 overflow-hidden">
+        <div class="table-responsive table-scroll-70">
+          <table class="table table-sm align-middle mb-0 glass-table table-glass-transparent table-hover">
+          <thead class="table-head-glass">
+            <tr>
+              <th scope="col" class="w-14">Date</th>
+              <th scope="col" class="w-14">Opponent</th>
+              <th scope="col" class="w-08">H/A</th>
+              <th scope="col" class="w-16">Slot</th>
+              <th scope="col" class="w-18">Teammate</th>
+              <th scope="col" class="w-22">Result</th>
+              <th scope="col" class="text-center w-18">Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if rows %}
+              {% for r in rows %}
+                <tr class="row-link" data-href="{% url 'fixture_detail' r.fixture.id %}" tabindex="0" role="button">
+                  <td>{{ r.date|date:"M j, Y" }}</td>
+                  <td>{% if r.fixture.is_bye %}<span class="badge bg-secondary">BYE</span>{% else %}{{ r.opponent }}{% endif %}</td>
+                  <td>{% if r.home %}Home{% else %}Away{% endif %}</td>
+                  <td>{{ r.slot }}</td>
+                  <td>
+                    {% if r.is_doubles %}
+                      {% if r.teammate %}{{ r.teammate.first_name }} {{ r.teammate.last_name }}{% else %}<span class="text-muted">—</span>{% endif %}
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if r.result_text %}
+                      {% if r.result_text|slice:":3" == "Win" %}
+                        <span class="text-success fw-bold">{{ r.result_text|cut:" (Sub)" }} {{ r.games_text }}</span>
+                      {% elif r.result_text|slice:":3" == "Tie" %}
+                        <span class="text-info fw-semibold">{{ r.result_text|cut:" (Sub)" }} {{ r.games_text }}</span>
+                      {% elif r.result_text|slice:":4" == "Loss" %}
+                        <span class="text-warning">{{ r.result_text|cut:" (Sub)" }} {{ r.games_text }}</span>
+                      {% else %}
+                        {{ r.result_text|cut:" (Sub)" }} {{ r.games_text }}
+                      {% endif %}
+                      {% if r.is_sub %}
+                        <span class="badge text-bg-info ms-2 align-middle">Sub</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-center text-nowrap">{{ r.points|default:0|floatformat:-2 }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="7" class="text-center text-muted py-3">No matches found for this season.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        <tfoot>
+  <tr>
+    <th colspan="6" class="text-end">Season total</th>
+    <th class="text-center">{{ total_points|default:0|floatformat:-2 }}</th>
+  </tr>
+</tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script src="{% static 'js/my_results.js' %}" defer></script>
+
+{% endblock %}

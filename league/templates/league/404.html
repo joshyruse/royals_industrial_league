@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Royals Industrial League{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <h1 class="display-4 text-purple">404</h1>
+  <p class="lead">Oops, we couldn’t find that page.</p>
+  <p class="text-muted">It may have been moved or no longer exists.</p>
+  <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Back to Dashboard</a>
+</div>
+{% endblock %}

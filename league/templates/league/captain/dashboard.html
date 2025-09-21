@@ -1,0 +1,100 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Captain — Matches{% if selected %} — {{ selected }}{% endif %}</h1>
+  <form method="get" class="mb-0 d-flex align-items-center gap-2">
+    <label for="season-select" class="form-label me-2 mb-0">Season</label>
+    {% if seasons %}
+      <select id="season-select" name="season" class="form-select form-select-sm d-inline-block w-auto minw-220 theme-select">
+        {% for s in seasons %}
+          <option value="{{ s.id }}" {% if selected and s.id == selected.id %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    {% else %}
+      <select id="season-select" class="form-select form-select-sm d-inline-block w-auto minw-220 theme-select" disabled>
+        <option>(no seasons)</option>
+      </select>
+    {% endif %}
+  </form>
+</div>
+
+<h2 class="h6 text-muted">Upcoming</h2>
+<div class="glass-card p-0 overflow-hidden">
+  <div class="table-responsive table-scroll-70">
+    <table class="table table-sm align-middle mb-0 glass-table table-glass-transparent table-hover">
+      <thead class="table-head-glass">
+        <tr>
+          <th scope="col" class="w-29">Date</th>
+          <th scope="col">Opponent</th>
+          <th scope="col" class="w.12">H/A</th>
+          <th scope="col" class="w.28">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for f in upcoming %}
+        <tr class="row-link" data-href="{% url 'fixture_detail' f.id %}">
+          <td>{{ f.date|date:"D M j, g:i a" }}</td>
+          <td>
+            {% if f.is_bye %}
+              <span class="badge bg-secondary">BYE</span>
+            {% else %}
+              {{ f.opponent }}
+            {% endif %}
+          </td>
+          <td>{% if f.home %}Home{% else %}Away{% endif %}</td>
+          <td>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'admin_availability_matrix' f.id %}">Availability</a>
+            {% if not f.is_bye %}
+              <a class="btn btn-sm btn-primary" href="{% url 'admin_lineup_builder' f.id %}">Lineup</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="text-muted">No upcoming matches.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h2 class="h6 text-muted mt-4">Past</h2>
+<div class="glass-card p-0 overflow-hidden">
+  <div class="table-responsive table-scroll-70">
+    <table class="table table-sm align-middle mb-0 glass-table table-glass-transparent table-hover">
+      <thead class="table-head-glass">
+        <tr>
+          <th scope="col" class="w.28">Date</th>
+          <th scope="col">Opponent</th>
+          <th scope="col" class="w.12">H/A</th>
+          <th scope="col" class="w.28">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for f in past %}
+        <tr class="row-link" data-href="{% url 'fixture_detail' f.id %}">
+          <td>{{ f.date|date:"D M j, g:i a" }}</td>
+          <td>
+            {% if f.is_bye %}
+              <span class="badge bg-secondary">BYE</span>
+            {% else %}
+              {{ f.opponent }}
+            {% endif %}
+          </td>
+          <td>{% if f.home %}Home{% else %}Away{% endif %}</td>
+          <td>
+            {% if not f.is_bye %}
+              <a class="btn btn-sm btn-outline-primary" href="{% url 'admin_availability_matrix' f.id %}">Availability</a>
+              <a class="btn btn-sm btn-primary" href="{% url 'admin_lineup_builder' f.id %}">Lineup</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="text-muted">No past matches yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script src="{% static 'js/captain_dashboard.js' %}" defer></script>
+{% endblock %}

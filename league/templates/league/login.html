@@ -1,0 +1,52 @@
+{% extends "league/base.html" %}
+{% load static %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="glass-card p-3">
+      <div class="card-body">
+        {% if form and form.non_field_errors %}
+          <div class="alert alert-danger mb-3" role="alert">
+            {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
+          </div>
+        {% endif %}
+        <div class="text-center mb-3">
+          <img src="{% static 'images/tennis_ball_login.png' %}" 
+               alt="Login"
+               class="login-title-img">
+        </div>
+        <form method="post" action="{% url 'league_login' %}" class="d-grid gap-3">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="id_username" class="form-label">Username</label>
+            <input type="text" id="id_username" name="username" class="form-control" autocomplete="username" required autofocus>
+            {% if form and form.username.errors %}
+              <div class="invalid-feedback d-block">{{ form.username.errors|striptags }}</div>
+            {% endif %}
+          </div>
+          <div class="mb-3">
+            <label for="id_password" class="form-label">Password</label>
+            <input type="password" id="id_password" name="password" class="form-control" autocomplete="current-password" required>
+            <a href="{% url 'password_reset' %}" class="link-primary">Forgot your password?</a>
+            {% if form and form.password.errors %}
+              <div class="invalid-feedback d-block">{{ form.password.errors|striptags }}</div>
+            {% endif %}
+          </div>
+          {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+          {% elif request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+          {% endif %}
+          <button type="submit" class="btn btn-primary w-100">Login</button>
+          <div class="text-center mt-4">
+            <img src="{% static 'images/royal_tennis_ball.png' %}"
+                 alt="Royals League"
+                 class="login-footer-logo"
+                 loading="lazy">
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
