@@ -30,7 +30,23 @@ STORAGES["staticfiles"] = {
 globals()["STORAGES"] = STORAGES
 
 
-ALLOWED_HOSTS = ["*"]  # dev
+# Hosts / CSRF (read from env if provided; otherwise sensible dev defaults)
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=[
+        "royals-dev.onrender.com",
+        "dev.royalsleague.com",
+        "localhost",
+        "127.0.0.1",
+    ],
+)
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=[
+        "https://royals-dev.onrender.com",
+        "https://dev.royalsleague.com",
+    ],
+)
 EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 ANYMAIL = {
     "BREVO_API_KEY": os.getenv("BREVO_API_KEY_DEV", ""),
