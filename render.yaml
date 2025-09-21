@@ -13,7 +13,7 @@ services:
       gunicorn royals_industrial_league.wsgi:application --bind 0.0.0.0:10000 --workers 3
     envVars:
       - key: DJANGO_SETTINGS_MODULE
-        value: royals_industrial_league.settings.prod
+        value: royals_industrial_league.settings.dev
       - key: DEBUG
         value: "false"
       - key: SECRET_KEY            # set in dashboard after first import
@@ -24,10 +24,6 @@ services:
         value: https://royals-dev.onrender.com,https://dev.royalsleague.com
       - key: PUBLIC_BASE_URL
         value: https://dev.royalsleague.com
-      - key: EMAIL_BACKEND
-        value: django.core.mail.backends.console.EmailBackend
-      - key: ENABLE_SMS
-        value: "0"
       - key: DATABASE_URL
         sync: false
 
