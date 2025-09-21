@@ -21,7 +21,15 @@ for _p in _env_candidates:
         break
 # royals_industrial_league/settings/prod.py  (and mirror in base.py)
 
-DEBUG = True
+DEBUG = False
+
+STORAGES = globals().get("STORAGES", {})
+STORAGES["staticfiles"] = {
+    "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+}
+globals()["STORAGES"] = STORAGES
+
+
 ALLOWED_HOSTS = ["*"]  # dev
 EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 ANYMAIL = {
