@@ -3,7 +3,22 @@ import os
 import environ
 
 env = environ.Env()
-environ.Env.read_env(os.path.join("/etc/secrets", ".dev.env"))
+
+# Try Render Secret Files first, then local project root as a fallback.
+# If neither exists, we just rely on real environment variables.
+try:
+    from .base import BASE_DIR  # already defined in base.py
+except Exception:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+_env_candidates = [
+    os.path.join("/etc/secrets", ".dev.env"),           # Render Secret File path
+    os.path.join(str(BASE_DIR), ".dev.env"),             # Local development file
+]
+for _p in _env_candidates:
+    if os.path.exists(_p):
+        environ.Env.read_env(_p)
+        break
 # royals_industrial_league/settings/prod.py  (and mirror in base.py)
 
 DEBUG = True
