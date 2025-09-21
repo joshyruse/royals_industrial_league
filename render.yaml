@@ -34,7 +34,9 @@ services:
 
 databases:
   - name: royals-dev-db
-    plan: starter
+    region: virginia
+    plan: basic-256mb
+    diskSizeGB: 15
 
 # Optional scheduled jobs — uncomment when you’re ready
 #  - type: cron
