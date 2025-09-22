@@ -283,6 +283,21 @@ def _absolute_url(path: str) -> str:
     return f"{proto}://{domain}{path}"
 
 
+# ----------------------------- Site base helper -----------------------------
+def _site_base() -> str:
+    """
+    Absolute site base (scheme + host) for email assets.
+    Prefers settings.SITE_BASE_URL (e.g., https://dev.royalsleague.com),
+    otherwise builds from SITE_DOMAIN + SECURE_SSL_REDIRECT.
+    """
+    base = getattr(settings, "SITE_BASE_URL", None)
+    if base:
+        return str(base).rstrip("/")
+    domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
+    proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
+    return f"{proto}://{domain}" if domain else "http://localhost:8000"
+
+
 # ----------------------------- Channel senders -------------------------------
 
 
@@ -442,6 +457,8 @@ def notify(
         ctx["user"] = user
         ctx.setdefault("recipient", user)
         ctx.setdefault("notification_url", _absolute_url(notif_url) if notif_url else "")
+
+        ctx.setdefault("site_domain", _site_base())
 
         # Attach Player object if available (for templates that reference {{ player }})
         try:

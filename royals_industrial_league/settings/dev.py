@@ -60,7 +60,7 @@ CSRF_TRUSTED_ORIGINS = env.list(
 EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 ANYMAIL = {
     "BREVO_API_KEY": os.getenv("BREVO_API_KEY_DEV", ""),
-    "DEBUG_API_REQUESTS": True,
+    "DEBUG_API_REQUESTS": False,
 }
 DEFAULT_FROM_EMAIL = os.getenv("EMAIL_FROM_DEV", "Royals Dev <captain-dev@royalsleague.com>")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
