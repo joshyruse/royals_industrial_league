@@ -23,6 +23,14 @@ for _p in _env_candidates:
 
 DEBUG = False
 
+# Absolute site base (used in emails for absolute links & images)
+SITE_BASE_URL = os.getenv("SITE_BASE_URL", None) or env(
+    "SITE_BASE_URL",
+    default="http://localhost:8000",
+)
+# Optional: also keep a plain domain fallback if you use it elsewhere
+SITE_DOMAIN = os.getenv("SITE_DOMAIN", "dev.royalsleague.com")
+
 # Use Neon when DATABASE_URL is present; fall back to local sqlite only if missing.
 DATABASES = {
     "default": env.db(
