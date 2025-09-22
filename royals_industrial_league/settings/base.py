@@ -95,6 +95,7 @@ TIME_ZONE = "America/New_York"  # set yours
 USE_I18N = True
 USE_TZ = True
 
+# static files change
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
