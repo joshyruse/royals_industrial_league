@@ -128,8 +128,19 @@ except Exception:
 
 # --- SMS Enable by Environment ---
 ENABLE_SMS = (os.getenv("ENABLE_SMS", "0").lower() in ("1", "true", "yes"))
-# Correct the typo and normalize provider spelling
-SMS_PROVIDER = "brevo"
+# --- SMS Settings for Twilio ---
+SMS_PROVIDER = os.getenv("SMS_PROVIDER", "brevo").lower()
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+# --- TWILIO_MESSAGING_SERVICE_SID = os.getenv("TWILIO_MESSAGING_SERVICE_SID", "")
+TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
+
+# --- SMS Settings for Brevo ---
+BREVO_SMS_SENDER = "RoyalsIL"  # up to 11 chars (A-Z, 0-9); or a verified long code/short code in some regions
+BREVO_ORG_PREFIX_US = "Royals"
+SMS_DEFAULT_COUNTRY = "US"
+# Optional feature flag some environments used
+NOTIFY_QUIET_HOURS = (0, 0)
 
 # Back-compat: allow several env var names for the API key
 BREVO_API_KEY = (
@@ -139,8 +150,3 @@ BREVO_API_KEY = (
     or os.getenv("BREVO_SMS_API_KEY")
     or ""
 )
-BREVO_SMS_SENDER = "RoyalsIL"  # up to 11 chars (A-Z, 0-9); or a verified long code/short code in some regions
-BREVO_ORG_PREFIX_US = "Royals"
-SMS_DEFAULT_COUNTRY = "US"
-# Optional feature flag some environments used
-NOTIFY_QUIET_HOURS = (0, 0)

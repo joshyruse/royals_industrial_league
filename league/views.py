@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
 from django.urls import reverse
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 import json
 import csv
 from datetime import datetime, date, time
@@ -29,13 +29,21 @@ from .forms import LeagueStandingForm
 from league.notifications import notify
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
-from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import LeagueStanding, Season
+from .models import LeagueStanding, Season, DeliveryAttempt
 from .forms import LeagueStandingFormSet
 import uuid
 import logging
 from league.notifications import send_event
+from django.views.decorators.csrf import csrf_exempt
+
+# --- SMS Opt-in flow imports ---
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+import random
+from datetime import timedelta
+from .models import PhoneVerification, NotificationPreference
+from .notifications import _send_sms
 
 
 logger = logging.getLogger(__name__)
@@ -58,13 +66,7 @@ def _normalize_phone(phone: str) -> str:
         digits = default_cc + digits
     return "+" + digits if digits else ""
 
-# --- SMS Opt-in flow imports ---
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-import random
-from datetime import timedelta
-from .models import PhoneVerification, NotificationPreference
-from .notifications import _send_sms
+
 
  # --- Helpers for active season and team point totals ---
 
@@ -4386,3 +4388,27 @@ def admin_playoff_eligibility(request):
         "selected": selected,
         "rows": rows,
     })
+# Twilio Status Callbacks
+@csrf_exempt
+def twilio_sms_status(request):
+    # Optionally verify X-Twilio-Signature
+    sid = request.POST.get("MessageSid")
+    status = request.POST.get("MessageStatus")  # queued, sent, delivered, undelivered, failed
+    if not sid or not status:
+        return HttpResponseBadRequest("missing fields")
+    try:
+        attempt = DeliveryAttempt.objects.get(provider_message_id=sid, provider="twilio")
+        mapping = {
+            "queued": "QUEUED",
+            "accepted": "QUEUED",
+            "sending": "SENDING",
+            "sent": "SENT",
+            "delivered": "DELIVERED",
+            "undelivered": "FAILED",
+            "failed": "FAILED",
+        }
+        attempt.status = mapping.get(status, attempt.status)
+        attempt.save(update_fields=["status"])
+    except DeliveryAttempt.DoesNotExist:
+        pass
+    return HttpResponse("ok")

@@ -46,4 +46,5 @@ urlpatterns = [
     path("admin-panel/playoff-eligibility/", views.admin_playoff_eligibility, name="admin_playoff_eligibility"),
     path("admin-panel/standings/", views.admin_league_standings, name="admin_league_standings"),
     path("admin-panel/schedule/export-csv/", views.admin_schedule_export_csv, name="admin_schedule_export_csv"),
+    path("webhooks/twilio/sms-status/", views.twilio_sms_status, name="twilio_sms_status"),
 ]

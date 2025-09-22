@@ -17,6 +17,14 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
+# Absolute site base (used in emails for absolute links & images)
+SITE_BASE_URL = os.getenv("SITE_BASE_URL", None) or env(
+    "SITE_BASE_URL",
+    default="http://localhost:8000",
+)
+# Optional: also keep a plain domain fallback if you use it elsewhere
+SITE_DOMAIN = os.getenv("SITE_DOMAIN", "royalsleague.com")
+
 # Local prod-mode testing without HTTPS
 if os.getenv("LOCAL_NO_SSL", "0") == "1":
     SECURE_SSL_REDIRECT = False

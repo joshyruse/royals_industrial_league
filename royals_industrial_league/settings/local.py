@@ -4,12 +4,20 @@ from .base import *
 import os
 import environ
 
-env = environ.Env()
+# Prevent .dev.env (or your shell) from forcing Postgres locally
+os.environ.pop("DATABASE_URL", None)
 
-try:
-    from .base import BASE_DIR  # already defined in base.py
-except Exception:
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+env = environ.Env()
+# Load the same .dev.env so you get Twilio, email, etc.
+env_file = BASE_DIR / ".dev.env"
+if env_file.exists():
+    environ.Env.read_env(str(env_file))
+
+# --- Local-only overrides ---
+# Prefer a LOCAL_SMS_PROVIDER if present; otherwise default to twilio for local.
+_local_sms = os.getenv("LOCAL_SMS_PROVIDER", "").strip().lower()
+if _local_sms:
+    os.environ["SMS_PROVIDER"] = _local_sms
 
 # --- General ---
 DEBUG = True
@@ -81,12 +89,21 @@ INTERNAL_IPS = ["127.0.0.1"]
 # --- Password hashing speed-up for local ---
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
-# --- SMS ---
-ENABLE_SMS = True
-SMS_PROVIDER = "brevo"
-BREVO_API_KEY = ""  # empty for local
-BREVO_SMS_SENDER = "RoyalsIL"
+# --- SMS Enable by Environment ---
+ENABLE_SMS = (os.getenv("ENABLE_SMS", "0").lower() in ("1", "true", "yes"))
+
+# --- SMS Settings (prefer Twilio locally unless explicitly set) ---
+SMS_PROVIDER = os.getenv("SMS_PROVIDER", "twilio").lower()  # default to twilio on local
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_MESSAGING_SERVICE_SID = os.getenv("TWILIO_MESSAGING_SERVICE_SID", "")
+TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
+
+# --- SMS Settings for Brevo ---
+BREVO_SMS_SENDER = "RoyalsIL"  # up to 11 chars (A-Z, 0-9); or a verified long code/short code in some regions
+BREVO_ORG_PREFIX_US = "Royals"
 SMS_DEFAULT_COUNTRY = "US"
+# Optional feature flag some environments used
 NOTIFY_QUIET_HOURS = (0, 0)
 
 # --- Email dev redirect support ---
