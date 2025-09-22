@@ -2,7 +2,7 @@ from .base import *
 import os
 import environ
 
-# env = environ.Env()
+env = environ.Env()
 
 # Try Render Secret Files first, then local project root as a fallback.
 # If neither exists, we just rely on real environment variables.
