@@ -9,7 +9,6 @@ venv/
 *.sqlite3
 
 # Django
-/static/
 staticfiles/
 media/
 db.sqlite3
