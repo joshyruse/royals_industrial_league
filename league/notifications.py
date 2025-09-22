@@ -1,13 +1,12 @@
 # league/notifications.py
 from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import time
 import json
 import logging
 import os
 from typing import Iterable, Dict, Any, List, Optional
-
+from urllib.parse import urljoin, urlparse
 import requests
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -272,15 +271,20 @@ def _should_send_sms(user, event_key: str) -> bool:
 
 
 def _absolute_url(path: str) -> str:
-    """
-    Build absolute URL using SITE_DOMAIN + SECURE_SSL_REDIRECT.
-    Falls back to http://localhost:8000 if not configured.
-    """
-    domain = getattr(settings, "SITE_DOMAIN", "localhost:8000")
-    proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
+    if not path:
+        return ""
     if path.startswith("http://") or path.startswith("https://"):
         return path
-    return f"{proto}://{domain}{path}"
+
+    # Prefer explicit base URL
+    base = getattr(settings, "SITE_BASE_URL", None)
+    if base:
+        return urljoin(base.rstrip("/") + "/", path.lstrip("/"))
+
+    # Fallback to SITE_DOMAIN + protocol
+    domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
+    proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
+    return f"{proto}://{domain}{path}" if domain else f"http://localhost:8000{path}"
 
 
 # ----------------------------- Site base helper -----------------------------
@@ -457,6 +461,18 @@ def notify(
         ctx["user"] = user
         ctx.setdefault("recipient", user)
         ctx.setdefault("notification_url", _absolute_url(notif_url) if notif_url else "")
+
+        base = getattr(settings, "SITE_BASE_URL", None)
+        if base:
+            parsed = urlparse(base)
+            ctx.setdefault("protocol", parsed.scheme)
+            ctx.setdefault("domain", parsed.netloc)
+        else:
+            # fallbacks
+            proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
+            domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
+            ctx.setdefault("protocol", proto)
+            ctx.setdefault("domain", domain or "localhost:8000")
 
         ctx.setdefault("site_domain", _site_base())
 

@@ -21,11 +21,12 @@ SECRET_KEY = env(
 
 # --- Database ---
 # Default: local SQLite file
+# local.py
 DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-    )
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 }
 DATABASES["default"]["CONN_MAX_AGE"] = 0  # no persistent connections
 
@@ -81,7 +82,7 @@ INTERNAL_IPS = ["127.0.0.1"]
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # --- SMS ---
-ENABLE_SMS = True  # default off for local
+ENABLE_SMS = True
 SMS_PROVIDER = "brevo"
 BREVO_API_KEY = ""  # empty for local
 BREVO_SMS_SENDER = "RoyalsIL"
