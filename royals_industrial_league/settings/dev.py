@@ -2,7 +2,7 @@ from .base import *
 import os
 import environ
 
-env = environ.Env()
+# env = environ.Env()
 
 # Try Render Secret Files first, then local project root as a fallback.
 # If neither exists, we just rely on real environment variables.
@@ -22,6 +22,16 @@ for _p in _env_candidates:
 # royals_industrial_league/settings/prod.py  (and mirror in base.py)
 
 DEBUG = False
+
+# Use Neon when DATABASE_URL is present; fall back to local sqlite only if missing.
+DATABASES = {
+    "default": env.db(
+        "DATABASE_URL",
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+    )
+}
+# Keep DB connections open briefly (nice for web dynos)
+DATABASES["default"]["CONN_MAX_AGE"] = 60
 
 STORAGES = globals().get("STORAGES", {})
 STORAGES["staticfiles"] = {
