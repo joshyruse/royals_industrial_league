@@ -276,12 +276,10 @@ def _absolute_url(path: str) -> str:
     if path.startswith("http://") or path.startswith("https://"):
         return path
 
-    # Prefer explicit base URL
     base = getattr(settings, "SITE_BASE_URL", None)
     if base:
         return urljoin(base.rstrip("/") + "/", path.lstrip("/"))
 
-    # Fallback to SITE_DOMAIN + protocol
     domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
     proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
     return f"{proto}://{domain}{path}" if domain else f"http://localhost:8000{path}"
@@ -521,20 +519,32 @@ def notify(
         ctx = dict(context)
         ctx["user"] = user
         ctx.setdefault("recipient", user)
+
+        # Consistent first_name fallback for templates
+        if "first_name" not in ctx:
+            try:
+                if getattr(user, "first_name", ""):
+                    ctx["first_name"] = user.first_name
+            except Exception:
+                pass
+
+        # Notification URL (relative allowed; make absolute if present)
         ctx.setdefault("notification_url", _absolute_url(notif_url) if notif_url else "")
 
+        # Legacy support for templates that use {{ protocol }}://{{ domain }}
         base = getattr(settings, "SITE_BASE_URL", None)
         if base:
             parsed = urlparse(base)
             ctx.setdefault("protocol", parsed.scheme)
             ctx.setdefault("domain", parsed.netloc)
         else:
-            # fallbacks
+            # fallbacks when SITE_BASE_URL is not set
             proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
             domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
             ctx.setdefault("protocol", proto)
             ctx.setdefault("domain", domain or "localhost:8000")
 
+        # Absolute site base for images/assets
         ctx.setdefault("site_domain", _site_base())
 
         # Attach Player object if available (for templates that reference {{ player }})
@@ -545,6 +555,14 @@ def notify(
                 ctx.setdefault("player", p_for_user)
         except Exception:
             logger.exception("[notify] failed to attach player for user %s", getattr(user, "id", None))
+
+        # Normalize common URL fields in context to absolute (if present)
+        try:
+            for key in ("fixture_url", "availability_url", "lineup_url", "results_url", "notification_url"):
+                if ctx.get(key):
+                    ctx[key] = _absolute_url(ctx[key])
+        except Exception:
+            logger.exception("[notify] failed to absolutize URLs for user %s", getattr(user, "id", None))
 
         # Merge per-user extras (e.g., slot_label, player_first_name)
         try:

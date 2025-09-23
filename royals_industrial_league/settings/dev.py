@@ -24,10 +24,9 @@ for _p in _env_candidates:
 DEBUG = False
 
 # Absolute site base (used in emails for absolute links & images)
-SITE_BASE_URL = os.getenv("SITE_BASE_URL", None) or env(
-    "SITE_BASE_URL",
-    default="http://localhost:8000",
-)
+SITE_BASE_URL = env("SITE_BASE_URL", default="http://localhost:8000")
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
+
 # Optional: also keep a plain domain fallback if you use it elsewhere
 SITE_DOMAIN = os.getenv("SITE_DOMAIN", "dev.royalsleague.com")
 

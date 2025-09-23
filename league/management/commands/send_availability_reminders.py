@@ -4,13 +4,13 @@ from django.utils import timezone
 from django.urls import reverse
 from datetime import timedelta
 import logging
-
 from django.contrib.auth import get_user_model
 User = get_user_model()
-
 from league.models import Fixture  # adjust imports as needed
 from league.notifications import send_event
 from league.notifications import AVAILABILITY_REMINDER_5D
+from urllib.parse import urljoin
+from django.conf import settings
 
 logger = logging.getLogger("league")
 
@@ -177,8 +177,14 @@ class Command(BaseCommand):
             return False
 
     def _abs_url(self, path: str) -> str:
-        from django.conf import settings
-        base = getattr(settings, "PUBLIC_BASE_URL", "http://localhost:8000")
-        if path.startswith("http"):
+        base = getattr(settings, "SITE_BASE_URL", None) or "http://localhost:8000"
+
+        if not path:
+            return ""
+
+        # if it’s already absolute, leave it alone
+        if path.startswith("http://") or path.startswith("https://"):
             return path
-        return f"{base.rstrip('/')}{path}"
+
+        # urljoin handles slashes cleanly
+        return urljoin(base.rstrip("/") + "/", path.lstrip("/"))

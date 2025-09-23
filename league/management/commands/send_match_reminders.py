@@ -4,10 +4,11 @@ from django.utils import timezone
 from django.urls import reverse
 from datetime import timedelta
 import logging
-
 from league.models import Fixture, Lineup, LineupSlot  # adjust paths if different
 from league.notifications import send_event
 from league.notifications import MATCH_REMINDER_24H
+from urllib.parse import urljoin
+from django.conf import settings
 
 logger = logging.getLogger("league")
 
@@ -123,9 +124,14 @@ class Command(BaseCommand):
         ))
 
     def _abs_url(self, path: str) -> str:
-        # If you have Sites or request in management commands, use that.
-        # Otherwise, fall back to current host env var or localhost.
-        from django.conf import settings
-        base = getattr(settings, "PUBLIC_BASE_URL", "http://localhost:8000")
-        if path.startswith("http"): return path
-        return f"{base.rstrip('/')}{path}"
+        base = getattr(settings, "SITE_BASE_URL", None) or "http://localhost:8000"
+
+        if not path:
+            return ""
+
+        # if it’s already absolute, leave it alone
+        if path.startswith("http://") or path.startswith("https://"):
+            return path
+
+        # urljoin handles slashes cleanly
+        return urljoin(base.rstrip("/") + "/", path.lstrip("/"))
