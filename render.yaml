@@ -30,7 +30,7 @@ services:
         value: 3.12.6
 
   - type: cron
-    name: match-reminders
+    name: match-reminders-dev
     schedule: "0 14 * * 5"
     startCommand: |
       bash -lc '
@@ -51,8 +51,11 @@ services:
         value: royals_industrial_league.settings.dev
       - key: DATABASE_URL
         sync: false
+      - key: PYTHON_VERSION
+        value: 3.12.6
+
   - type: cron
-    name: availability-reminders
+    name: availability-reminders-dev
     schedule: "0 14 * * 1"
     startCommand: |
       bash -lc '
@@ -73,3 +76,5 @@ services:
         value: royals_industrial_league.settings.dev
       - key: DATABASE_URL
         sync: false
+      - key: PYTHON_VERSION
+        value: 3.12.6
