@@ -33,9 +33,27 @@ services:
     name: match-reminders
     schedule: "0 14 * * 5"
     startCommand: "python manage.py send_match_reminders"
-    service: royals-dev
+    env: python
+    plan: starter
+    branch: dev
+    buildCommand: |
+      pip install -r requirements.txt
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: royals_industrial_league.settings.dev
+      - key: DATABASE_URL
+        sync: false
   - type: cron
     name: availability-reminders
     schedule: "0 14 * * 1"
     startCommand: "python manage.py send_availability_reminders"
-    service: royals-dev
+    env: python
+    plan: starter
+    branch: dev
+    buildCommand: |
+      pip install -r requirements.txt
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: royals_industrial_league.settings.dev
+      - key: DATABASE_URL
+        sync: false
