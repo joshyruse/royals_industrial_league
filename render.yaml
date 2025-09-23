@@ -32,10 +32,10 @@ services:
   - type: cron
     name: match-reminders
     schedule: "0 14 * * 5"
-    command: "python manage.py send_match_reminders"
+    startCommand: "python manage.py send_match_reminders"
     service: royals-dev
   - type: cron
     name: availability-reminders
     schedule: "0 14 * * 1"
-    command: "python manage.py send_availability_reminders"
+    startCommand: "python manage.py send_availability_reminders"
     service: royals-dev
