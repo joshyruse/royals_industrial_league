@@ -28,39 +28,10 @@ services:
         sync: false
       - key: PYTHON_VERSION
         value: 3.12.6
-
-  - type: cron
-    name: royals-dev-match-reminders
-    env: python
-    plan: starter
-    branch: dev
-    schedule: "0 14 * * 5"
-    buildCommand: |
-      pip install -r requirements.txt
-    startCommand: |
-      python manage.py send_match_reminders
-    envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: royals_industrial_league.settings.dev
-      - key: DATABASE_URL
-        fromDatabase:
-          name: royals-dev-db
-          property: connectionString
-
-  - type: cron
-    name: royals-dev-availability-reminders
-    env: python
-    plan: starter
-    branch: dev
-    schedule: "0 14 * * 1"
-    buildCommand: |
-      pip install -r requirements.txt
-    startCommand: |
-      python manage.py send_availability_reminders
-    envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: royals_industrial_league.settings.dev
-      - key: DATABASE_URL
-        fromDatabase:
-          name: royals-dev-db
-          property: connectionString
+    cronJobs:
+      - name: match-reminders
+        schedule: "0 14 * * 5"
+        command: "python manage.py send_match_reminders"
+      - name: availability-reminders
+        schedule: "0 14 * * 1"
+        command: "python manage.py send_availability_reminders"
