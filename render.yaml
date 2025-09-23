@@ -36,8 +36,10 @@ services:
       bash -lc '
         set -euxo pipefail
         python -V
-        echo "DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-<unset>}"
-        python -m pip show twilio || true
+        echo "Installing Python deps..."
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        python -m pip show django twilio || true
         python manage.py check -v 2
         python manage.py send_match_reminders -v 3
       '
@@ -61,8 +63,10 @@ services:
       bash -lc '
         set -euxo pipefail
         python -V
-        echo "DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-<unset>}"
-        python -m pip show twilio || true
+        echo "Installing Python deps..."
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        python -m pip show django twilio || true
         python manage.py check -v 2
         python manage.py send_availability_reminders -v 3
       '
