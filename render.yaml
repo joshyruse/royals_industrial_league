@@ -29,21 +29,38 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.6
 
-# Optional scheduled jobs — uncomment when you’re ready
-#  - type: cron
-#    name: royals-dev-match-reminders
-#    env: python
-#    plan: starter
-#    branch: dev
-#    schedule: "5 8 * * *"
-#    buildCommand: |
-#      pip install -r requirements.txt
-#    startCommand: |
-#      python manage.py send_match_reminders --dry-run
-#    envVars:
-#      - key: DJANGO_SETTINGS_MODULE
-#        value: royals_industrial_league.settings.prod
-#      - key: DATABASE_URL
-#        fromDatabase:
-#          name: royals-dev-db
-#          property: connectionString
+  - type: cron
+    name: royals-dev-match-reminders
+    env: python
+    plan: starter
+    branch: dev
+    schedule: "0 14 * * 5"
+    buildCommand: |
+      pip install -r requirements.txt
+    startCommand: |
+      python manage.py send_match_reminders
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: royals_industrial_league.settings.dev
+      - key: DATABASE_URL
+        fromDatabase:
+          name: royals-dev-db
+          property: connectionString
+
+  - type: cron
+    name: royals-dev-availability-reminders
+    env: python
+    plan: starter
+    branch: dev
+    schedule: "0 14 * * 1"
+    buildCommand: |
+      pip install -r requirements.txt
+    startCommand: |
+      python manage.py send_availability_reminders
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: royals_industrial_league.settings.dev
+      - key: DATABASE_URL
+        fromDatabase:
+          name: royals-dev-db
+          property: connectionString
