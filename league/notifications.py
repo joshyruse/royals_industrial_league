@@ -276,10 +276,10 @@ def _absolute_url(path: str) -> str:
     if path.startswith("http://") or path.startswith("https://"):
         return path
 
-    base = getattr(settings, "SITE_BASE_URL", None)
+    base = getattr(settings, "PUBLIC_BASE_URL", None)
     if base:
         return urljoin(base.rstrip("/") + "/", path.lstrip("/"))
-
+    # Legacy override if provided
     domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
     proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
     return f"{proto}://{domain}{path}" if domain else f"http://localhost:8000{path}"
@@ -289,10 +289,10 @@ def _absolute_url(path: str) -> str:
 def _site_base() -> str:
     """
     Absolute site base (scheme + host) for email assets.
-    Prefers settings.SITE_BASE_URL (e.g., https://dev.royalsleague.com),
-    otherwise builds from SITE_DOMAIN + SECURE_SSL_REDIRECT.
+    Prefers settings.PUBLIC_BASE_URL (e.g., https://dev.royalsleague.com),
+    otherwise falls back to SITE_DOMAIN (legacy) or http://localhost:8000.
     """
-    base = getattr(settings, "SITE_BASE_URL", None)
+    base = getattr(settings, "PUBLIC_BASE_URL", None)
     if base:
         return str(base).rstrip("/")
     domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
@@ -532,20 +532,21 @@ def notify(
         ctx.setdefault("notification_url", _absolute_url(notif_url) if notif_url else "")
 
         # Legacy support for templates that use {{ protocol }}://{{ domain }}
-        base = getattr(settings, "SITE_BASE_URL", None)
+        base = getattr(settings, "PUBLIC_BASE_URL", None)
         if base:
             parsed = urlparse(base)
             ctx.setdefault("protocol", parsed.scheme)
             ctx.setdefault("domain", parsed.netloc)
         else:
-            # fallbacks when SITE_BASE_URL is not set
+            # Fallback when PUBLIC_BASE_URL is not set: default to localhost
             proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
-            domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
             ctx.setdefault("protocol", proto)
-            ctx.setdefault("domain", domain or "localhost:8000")
+            ctx.setdefault("domain", "localhost:8000")
 
         # Absolute site base for images/assets
-        ctx.setdefault("site_domain", _site_base())
+        base_site = _site_base()
+        ctx.setdefault("public_base_url", base_site)
+        ctx.setdefault("site_domain", base_site)  # legacy alias; remove once templates stop using it
 
         # Attach Player object if available (for templates that reference {{ player }})
         try:

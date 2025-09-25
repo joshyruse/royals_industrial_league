@@ -3,11 +3,20 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[2]  # adjust if your tree differs
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-not-secret")  # override in prod
+SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("DJANGO_SECRET_KEY", "dev-not-secret")  # Render uses SECRET_KEY; keep legacy fallback
 DEBUG = False  # overridden in dev.py
 
-hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "")
+# Prefer modern env name; fall back to legacy DJANGO_ALLOWED_HOSTS for local/docker
+hosts = os.getenv("ALLOWED_HOSTS") or os.getenv("DJANGO_ALLOWED_HOSTS", "")
 ALLOWED_HOSTS = [h for h in (hosts.split(",") if hosts else []) if h]
+
+# Prefer modern env name; fall back to legacy DJANGO_CSRF_TRUSTED for local/docker
+csrf = os.getenv("CSRF_TRUSTED_ORIGINS") or os.getenv("DJANGO_CSRF_TRUSTED", "")
+CSRF_TRUSTED_ORIGINS = [o for o in csrf.split(",") if o]
+
+# Canonical absolute base for building links in emails/SMS; dev/prod override as needed
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",

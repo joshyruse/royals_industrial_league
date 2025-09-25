@@ -273,8 +273,8 @@ def _send_invite_email(player, request):
 
     # Build absolute accept URL
     accept_path = reverse("accept_invite", args=[str(player.invite_token)])
-    site_domain = f"{request.scheme}://{request.get_host()}"
-    accept_url = site_domain + accept_path
+    base_url = getattr(settings, "PUBLIC_BASE_URL", None) or f"{request.scheme}://{request.get_host()}"
+    accept_url = base_url.rstrip('/') + accept_path
 
     # Subject (from template, fallback if missing)
     subject = render_to_string("emails/invite_subject.txt", {}).strip()
@@ -286,7 +286,8 @@ def _send_invite_email(player, request):
         "first_name": getattr(player, "first_name", ""),
         "accept_url": accept_url,
         "now": timezone.now(),
-        "site_domain": site_domain,
+        "public_base_url": base_url,
+        "site_domain": base_url,
     }
     text_body = render_to_string("emails/invite_player.txt", ctx)
     html_body = render_to_string("emails/invite_player.html", ctx)

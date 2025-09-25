@@ -21,4 +21,4 @@ Partner (if assigned):
 Notes: {{ notes }}
 {% endif %}
 
-Details: {% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}
+Details: {% if fixture_url %}{{ fixture_url }}{% else %}{{ public_base_url }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}

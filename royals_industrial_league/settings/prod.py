@@ -1,14 +1,25 @@
 import os
 from .base import *
+import environ
+
+env = environ.Env()
 
 DEBUG = False
-hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "")
+hosts = os.getenv("ALLOWED_HOSTS", "")
 ALLOWED_HOSTS = [h for h in (hosts.split(",") if hosts else []) if h]
-CSRF_TRUSTED_ORIGINS = [o for o in os.getenv("DJANGO_CSRF_TRUSTED", "").split(",") if o]
+CSRF_TRUSTED_ORIGINS = [o for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+
+# Canonical public base URL (set in Render)
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL") or os.getenv("SITE_BASE_URL", "http://localhost:8000")
+
+# Legacy alias so old code keeps working (remove later when fully migrated)
+SITE_BASE_URL = PUBLIC_BASE_URL
 
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
@@ -17,11 +28,6 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
-# Absolute site base (used in emails for absolute links & images)
-SITE_BASE_URL = os.getenv("SITE_BASE_URL", None) or env(
-    "SITE_BASE_URL",
-    default="http://localhost:8000",
-)
 # Optional: also keep a plain domain fallback if you use it elsewhere
 SITE_DOMAIN = os.getenv("SITE_DOMAIN", "royalsleague.com")
 
@@ -135,7 +141,7 @@ SERVER_EMAIL = "Royals Industrial League <captain@royalsleague.com>"
 # --- SMS (Brevo Transactional SMS) ---
 # Normalize provider spelling and use environment variables for prod
 ENABLE_SMS = (os.getenv("ENABLE_SMS", "0").lower() in ("1", "true", "yes"))
-SMS_PROVIDER = (os.getenv("SMS_PROVIDER") or "brevo").lower()
+SMS_PROVIDER = (os.getenv("SMS_PROVIDER") or "twilio").lower()
 
 # Unified API key (prefer BREVO_API_KEY; fall back to BREVO_SMS_API_KEY)
 BREVO_API_KEY = os.getenv("BREVO_API_KEY") or os.getenv("BREVO_SMS_API_KEY") or ""

@@ -9,4 +9,4 @@ Partner: {% if partner_full %}{{ partner_full }}{% else %}{{ partner_first_name 
 {% endwith %}
 {% endwith %}
 {% if fixture %}{{ fixture.pretty_date|default:fixture.date }}{% if fixture.time %} @ {{ fixture.time }}{% endif %}{% if fixture.opponent %} vs {{ fixture.opponent }}{% endif %} ({% if fixture.home %}Home{% else %}Away{% endif %}).{% endif %}
-Details: {% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}
+Details: {% if fixture_url %}{{ fixture_url }}{% else %}{{ public_base_url }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}

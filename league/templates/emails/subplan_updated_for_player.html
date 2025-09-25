@@ -32,7 +32,7 @@
   <body>
     <div class="wrapper">
       <div class="header">
-        <img class="brand" src="{{ site_domain }}{% static 'images/royal_tennis_ball.png' %}"
+        <img class="brand" src="{{ public_base_url }}{% static 'images/royal_tennis_ball.png' %}"
              alt="Royals Tennis Ball logo"
              width="120"
              style="display:block;width:120px;max-width:100%;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">
@@ -86,14 +86,14 @@
           <p><strong>Notes:</strong> {{ notes }}</p>
         {% endif %}
         <p style="margin:20px 0">
-          <a class="button" href="{% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}">Match Details</a>
+          <a class="button" href="{% if fixture_url %}{{ fixture_url }}{% else %}{{ public_base_url }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}">Match Details</a>
         </p>
         <p class="muted">If the button doesn’t work, copy and paste this link:<br>
-          <span style="word-break:break-all">{% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}</span>
+          <span style="word-break:break-all">{% if fixture_url %}{{ fixture_url }}{% else %}{{ public_base_url }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}</span>
         </p>
       </div>
       <div class="logo" style="text-align:center; margin:16px 0;">
-        <img src="{{ site_domain }}{% static 'images/royals_logo.png' %}"
+        <img src="{{ public_base_url }}{% static 'images/royals_logo.png' %}"
              alt="Royals League Logo"
              width="120"
              style="display:block;width:120px;max-width:100%;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">

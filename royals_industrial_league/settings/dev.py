@@ -23,8 +23,9 @@ for _p in _env_candidates:
 
 DEBUG = False
 
-# Absolute site base (used in emails for absolute links & images)
-SITE_BASE_URL = env("SITE_BASE_URL", default="http://localhost:8000")
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
+SITE_BASE_URL = PUBLIC_BASE_URL  # temporary alias
+
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
 
 # Optional: also keep a plain domain fallback if you use it elsewhere

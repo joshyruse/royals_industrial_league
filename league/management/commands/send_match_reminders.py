@@ -124,7 +124,7 @@ class Command(BaseCommand):
         ))
 
     def _abs_url(self, path: str) -> str:
-        base = getattr(settings, "SITE_BASE_URL", None) or "http://localhost:8000"
+        base = getattr(settings, "PUBLIC_BASE_URL", None) or "http://localhost:8000"
 
         if not path:
             return ""
