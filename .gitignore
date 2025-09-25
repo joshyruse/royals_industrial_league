@@ -9,7 +9,6 @@ venv/
 *.sqlite3
 
 # Django
-/static/
 staticfiles/
 media/
 db.sqlite3
@@ -23,5 +22,3 @@ db.sqlite3
 *.log
 .mypy_cache/
 .pytest_cache/
-
-.dev.env

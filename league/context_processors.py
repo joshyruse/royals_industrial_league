@@ -20,3 +20,9 @@ def sms_flags(request):
         "SMS_FEATURE_ENABLED": bool(getattr(settings, "ENABLE_SMS", False)),
         "SMS_PROVIDER": getattr(settings, "SMS_PROVIDER", "brevo"),
     }
+
+def public_base_url(request):
+    """Expose PUBLIC_BASE_URL to all templates (emails included)."""
+    return {
+        "public_base_url": getattr(settings, "PUBLIC_BASE_URL", "http://localhost:8000")
+    }

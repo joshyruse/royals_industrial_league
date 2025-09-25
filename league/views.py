@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
 from django.urls import reverse
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 import json
 import csv
 from datetime import datetime, date, time
@@ -29,13 +29,21 @@ from .forms import LeagueStandingForm
 from league.notifications import notify
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
-from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import LeagueStanding, Season
+from .models import LeagueStanding, Season, DeliveryAttempt
 from .forms import LeagueStandingFormSet
 import uuid
 import logging
 from league.notifications import send_event
+from django.views.decorators.csrf import csrf_exempt
+
+# --- SMS Opt-in flow imports ---
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+import random
+from datetime import timedelta
+from .models import PhoneVerification, NotificationPreference
+from .notifications import _send_sms
 
 
 logger = logging.getLogger(__name__)
@@ -58,13 +66,7 @@ def _normalize_phone(phone: str) -> str:
         digits = default_cc + digits
     return "+" + digits if digits else ""
 
-# --- SMS Opt-in flow imports ---
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-import random
-from datetime import timedelta
-from .models import PhoneVerification, NotificationPreference
-from .notifications import _send_sms
+
 
  # --- Helpers for active season and team point totals ---
 
@@ -271,8 +273,8 @@ def _send_invite_email(player, request):
 
     # Build absolute accept URL
     accept_path = reverse("accept_invite", args=[str(player.invite_token)])
-    site_domain = f"{request.scheme}://{request.get_host()}"
-    accept_url = site_domain + accept_path
+    base_url = getattr(settings, "PUBLIC_BASE_URL", None) or f"{request.scheme}://{request.get_host()}"
+    accept_url = base_url.rstrip('/') + accept_path
 
     # Subject (from template, fallback if missing)
     subject = render_to_string("emails/invite_subject.txt", {}).strip()
@@ -284,7 +286,8 @@ def _send_invite_email(player, request):
         "first_name": getattr(player, "first_name", ""),
         "accept_url": accept_url,
         "now": timezone.now(),
-        "site_domain": site_domain,
+        "public_base_url": base_url,
+        "site_domain": base_url,
     }
     text_body = render_to_string("emails/invite_player.txt", ctx)
     html_body = render_to_string("emails/invite_player.html", ctx)
@@ -3818,6 +3821,7 @@ class ThemedPasswordResetForm(PasswordResetForm):
                 'token': token,
                 'protocol': protocol,
                 'reset_url': reset_url,
+                'public_base_url': getattr(settings, "PUBLIC_BASE_URL","")
             }
             if extra_email_context:
                 context.update(extra_email_context)
@@ -4386,3 +4390,27 @@ def admin_playoff_eligibility(request):
         "selected": selected,
         "rows": rows,
     })
+# Twilio Status Callbacks
+@csrf_exempt
+def twilio_sms_status(request):
+    # Optionally verify X-Twilio-Signature
+    sid = request.POST.get("MessageSid")
+    status = request.POST.get("MessageStatus")  # queued, sent, delivered, undelivered, failed
+    if not sid or not status:
+        return HttpResponseBadRequest("missing fields")
+    try:
+        attempt = DeliveryAttempt.objects.get(provider_message_id=sid, provider="twilio")
+        mapping = {
+            "queued": "QUEUED",
+            "accepted": "QUEUED",
+            "sending": "SENDING",
+            "sent": "SENT",
+            "delivered": "DELIVERED",
+            "undelivered": "FAILED",
+            "failed": "FAILED",
+        }
+        attempt.status = mapping.get(status, attempt.status)
+        attempt.save(update_fields=["status"])
+    except DeliveryAttempt.DoesNotExist:
+        pass
+    return HttpResponse("ok")

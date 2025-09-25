@@ -5,4 +5,4 @@ Sub match assigned:
 — {% if target_team_name %}{{ target_team_name }}{% elif sub_team_name %}{{ sub_team_name }}{% else %}TBD{% endif %}
 {% with slot_text=slot_label|default:slot_name|default:"TBD" %}Slot: {{ slot_text }}{% endwith %}
 {% if fixture %}{% if fixture.home %}(Home){% else %}(Away){% endif %}{% endif %}
-{% if fixture_url %} {{ fixture_url }}{% else %} {{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}
+{% if fixture_url %} {{ fixture_url }}{% else %} {{ public_base_url }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}

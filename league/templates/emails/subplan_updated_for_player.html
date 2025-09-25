@@ -5,13 +5,13 @@
   <head>
     <meta charset="utf-8">
     <title>Your sub assignment was updated</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
       :root { color-scheme: light dark; }
       body { margin:0; background:#f5f7fb; font-family: -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
       .wrapper { max-width: 560px; margin: 24px auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 24px rgba(20,16,48,.08); overflow: hidden; }
       .header { padding: 24px; text-align: center; background: #ffffff; }
-      .brand { height: 100px; vertical-align: middle; }
+      .brand { vertical-align: middle; }
       .content { padding: 24px; color: #26243a; text-align:center; }
       h1 { margin: 0 0 8px; font-size: 20px; color: #5a2aa8; }
       p { margin: 0 0 12px; line-height: 1.5; }
@@ -32,7 +32,10 @@
   <body>
     <div class="wrapper">
       <div class="header">
-        <img class="brand" src="{{ site_domain }}{% static 'images/royal_tennis_ball.png' %}" alt="Royals Tennis Ball logo">
+        <img class="brand" src="{{ public_base_url }}{% static 'images/royal_tennis_ball.png' %}"
+             alt="Royals Tennis Ball logo"
+             width="120"
+             style="display:block;width:120px;max-width:100%;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">
       </div>
       <div class="content">
         <h1>Your sub assignment was updated</h1>
@@ -83,14 +86,17 @@
           <p><strong>Notes:</strong> {{ notes }}</p>
         {% endif %}
         <p style="margin:20px 0">
-          <a class="button" href="{% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}">Match Details</a>
+          <a class="button" href="{% if fixture_url %}{{ fixture_url }}{% else %}{{ public_base_url }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}">Match Details</a>
         </p>
         <p class="muted">If the button doesn’t work, copy and paste this link:<br>
-          <span style="word-break:break-all">{% if fixture_url %}{{ fixture_url }}{% else %}{{ protocol }}://{{ domain }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}</span>
+          <span style="word-break:break-all">{% if fixture_url %}{{ fixture_url }}{% else %}{{ public_base_url }}{% url 'fixture_detail' pk=fixture.id %}{% endif %}</span>
         </p>
       </div>
       <div class="logo" style="text-align:center; margin:16px 0;">
-        <img src="{{ site_domain }}{% static 'images/royals_logo.png' %}" alt="Royals League Logo" style="height:100px; display:block; margin:0 auto;">
+        <img src="{{ public_base_url }}{% static 'images/royals_logo.png' %}"
+             alt="Royals League Logo"
+             width="120"
+             style="display:block;width:120px;max-width:100%;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">
       </div>
       <div class="footer">{{ now|date:"Y" }} Royals - Industrial League</div>
     </div>

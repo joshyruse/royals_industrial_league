@@ -1,13 +1,12 @@
 # league/notifications.py
 from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import time
 import json
 import logging
 import os
 from typing import Iterable, Dict, Any, List, Optional
-
+from urllib.parse import urljoin, urlparse
 import requests
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -272,15 +271,33 @@ def _should_send_sms(user, event_key: str) -> bool:
 
 
 def _absolute_url(path: str) -> str:
-    """
-    Build absolute URL using SITE_DOMAIN + SECURE_SSL_REDIRECT.
-    Falls back to http://localhost:8000 if not configured.
-    """
-    domain = getattr(settings, "SITE_DOMAIN", "localhost:8000")
-    proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
+    if not path:
+        return ""
     if path.startswith("http://") or path.startswith("https://"):
         return path
-    return f"{proto}://{domain}{path}"
+
+    base = getattr(settings, "PUBLIC_BASE_URL", None)
+    if base:
+        return urljoin(base.rstrip("/") + "/", path.lstrip("/"))
+    # Legacy override if provided
+    domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
+    proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
+    return f"{proto}://{domain}{path}" if domain else f"http://localhost:8000{path}"
+
+
+# ----------------------------- Site base helper -----------------------------
+def _site_base() -> str:
+    """
+    Absolute site base (scheme + host) for email assets.
+    Prefers settings.PUBLIC_BASE_URL (e.g., https://dev.royalsleague.com),
+    otherwise falls back to SITE_DOMAIN (legacy) or http://localhost:8000.
+    """
+    base = getattr(settings, "PUBLIC_BASE_URL", None)
+    if base:
+        return str(base).rstrip("/")
+    domain = getattr(settings, "SITE_DOMAIN", "").lstrip("/")
+    proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
+    return f"{proto}://{domain}" if domain else "http://localhost:8000"
 
 
 # ----------------------------- Channel senders -------------------------------
@@ -311,21 +328,26 @@ def _send_email(user, event: Event, ctx: Dict[str, Any], attempt: DeliveryAttemp
 
 
 def _send_sms(user, event: Event, ctx: Dict[str, Any], attempt: DeliveryAttempt):
-    # Resolve provider and feature flag (single source of truth: settings.ENABLE_SMS)
-    provider = (getattr(settings, "SMS_PROVIDER", "") or getattr(settings, "SMS_PROVIDE", "")).lower()
-    feature_on = bool(getattr(settings, "ENABLE_SMS", False))
-    api_key = getattr(settings, "BREVO_API_KEY", "") or getattr(settings, "BREVO_SMS_API_KEY", "")
-
-    if not (feature_on and provider == "brevo" and api_key):
+    """
+    Send an SMS via the configured provider.
+    Preference order:
+      1) Twilio  (SMS_PROVIDER=twilio)
+      2) Brevo   (SMS_PROVIDER=brevo)
+    """
+    # Feature flag
+    if not bool(getattr(settings, "ENABLE_SMS", False)):
         attempt.status = "SUPPRESSED"
-        attempt.error = "SMS disabled/misconfigured"
+        attempt.error = "SMS disabled globally"
         attempt.save()
         return
 
+    provider = (getattr(settings, "SMS_PROVIDER", "brevo") or "brevo").lower()
+
+    # Resolve destination phone
     test_to = os.getenv("SMS_TEST_NUMBER", "").strip()
     if test_to:
         phone = test_to
-        # Normalize simple cases for test number
+        # simple normalization for test numbers
         if phone.startswith("00"):
             phone = "+" + phone[2:]
         if not phone.startswith("+"):
@@ -336,13 +358,11 @@ def _send_sms(user, event: Event, ctx: Dict[str, Any], attempt: DeliveryAttempt)
     else:
         prefs = _get_prefs(user)
         phone = getattr(prefs, "phone_e164", None)
-        # We already checked opt-in and verified phone in _should_send_sms; treat missing here as a hard failure
         if not phone or not _has_verified_phone(user):
             attempt.status = "FAILED"
             attempt.error = "no verified phone"
             attempt.save()
             return
-        # Normalize stored phone (ensure leading '+')
         phone = str(phone).strip()
         if phone.startswith("00"):
             phone = "+" + phone[2:]
@@ -352,42 +372,100 @@ def _send_sms(user, event: Event, ctx: Dict[str, Any], attempt: DeliveryAttempt)
                 digits = "1" + digits
             phone = "+" + digits
 
+    # Render SMS text (plain)
     sms_text = render_to_string(event.sms_template, ctx).strip()
 
-    headers = {
-        "api-key": api_key,
-        "accept": "application/json",
-        "content-type": "application/json",
-    }
-    payload = {
-        "sender": getattr(settings, "BREVO_SMS_SENDER", "ROYALS"),
-        "recipient": phone,
-        "content": sms_text[:1600],
-        "type": "transactional",
-    }
+    # --- Provider: Twilio ---
+    if provider == "twilio":
+        try:
+            from twilio.rest import Client  # imported lazily to avoid hard dependency in non-twilio envs
+            sid = getattr(settings, "TWILIO_ACCOUNT_SID", "")
+            tok = getattr(settings, "TWILIO_AUTH_TOKEN", "")
+            svc = getattr(settings, "TWILIO_MESSAGING_SERVICE_SID", "")
+            from_ = getattr(settings, "TWILIO_FROM_NUMBER", "")
+            status_cb = getattr(settings, "TWILIO_STATUS_CALLBACK_URL", "")
 
-    logger.info("Attempting Brevo SMS → to=%s sender=%s len=%d", phone, getattr(settings, "BREVO_SMS_SENDER", "ROYALS"), len(sms_text))
+            if not (sid and tok and (svc or from_)):
+                raise RuntimeError("Twilio misconfigured (missing SID/token/service or from)")
 
-    try:
-        resp = requests.post(
-            "https://api.brevo.com/v3/transactionalSMS/send",
-            headers=headers,
-            data=json.dumps(payload),
-            timeout=10,
-        )
-        if resp.status_code in (200, 201, 202):
-            data = resp.json() if resp.text else {}
-            attempt.status = "SENT"
-            attempt.provider_message_id = str(data.get("messageId", ""))[:255]
+            client = Client(sid, tok)
+            msg_kwargs = {"to": phone, "body": sms_text[:1600]}
+            if svc:
+                msg_kwargs["messaging_service_sid"] = svc
+            else:
+                msg_kwargs["from_"] = from_
+            if status_cb:
+                msg_kwargs["status_callback"] = status_cb
+
+            logger.info("Attempting Twilio SMS → to=%s via=%s", phone, ("service:"+svc if svc else "from:"+from_))
+            msg = client.messages.create(**msg_kwargs)
+
+            attempt.provider = "twilio"
+            attempt.provider_message_id = str(getattr(msg, "sid", "") or "")[:255]
+            # Twilio returns 'queued' immediately; mark as QUEUED (webhook can advance it)
+            attempt.status = "QUEUED"
             attempt.sent_at = timezone.now()
-        else:
+            attempt.error = ""
+            attempt.save()
+            return
+        except Exception as e:
             attempt.status = "FAILED"
-            attempt.error = f"{resp.status_code} {resp.text[:500]}"
-    except Exception as e:
-        attempt.status = "FAILED"
-        attempt.error = str(e)[:500]
-    finally:
-        attempt.save()
+            attempt.error = f"twilio send error: {str(e)[:480]}"
+            attempt.save()
+            return
+
+    # --- Provider: Brevo (fallback/default) ---
+    if provider == "brevo":
+        api_key = getattr(settings, "BREVO_API_KEY", "") or getattr(settings, "BREVO_SMS_API_KEY", "")
+        if not api_key:
+            attempt.status = "SUPPRESSED"
+            attempt.error = "Brevo API key missing"
+            attempt.save()
+            return
+
+        headers = {
+            "api-key": api_key,
+            "accept": "application/json",
+            "content-type": "application/json",
+        }
+        payload = {
+            "sender": getattr(settings, "BREVO_SMS_SENDER", "ROYALS"),
+            "recipient": phone,
+            "content": sms_text[:1600],
+            "type": "transactional",
+        }
+
+        logger.info("Attempting Brevo SMS → to=%s sender=%s len=%d", phone, getattr(settings, "BREVO_SMS_SENDER", "ROYALS"), len(sms_text))
+
+        try:
+            resp = requests.post(
+                "https://api.brevo.com/v3/transactionalSMS/send",
+                headers=headers,
+                data=json.dumps(payload),
+                timeout=10,
+            )
+            if resp.status_code in (200, 201, 202):
+                data = resp.json() if resp.text else {}
+                attempt.provider = "brevo"
+                attempt.status = "SENT"
+                attempt.provider_message_id = str(data.get("messageId", ""))[:255]
+                attempt.sent_at = timezone.now()
+                attempt.error = ""
+            else:
+                attempt.status = "FAILED"
+                attempt.error = f"{resp.status_code} {resp.text[:500]}"
+        except Exception as e:
+            attempt.status = "FAILED"
+            attempt.error = str(e)[:500]
+        finally:
+            attempt.save()
+        return
+
+    # Unknown provider
+    attempt.status = "SUPPRESSED"
+    attempt.error = f"Unknown SMS provider: {provider}"
+    attempt.save()
+    return
 
 
 # ----------------------------- Public API ------------------------------------
@@ -441,7 +519,34 @@ def notify(
         ctx = dict(context)
         ctx["user"] = user
         ctx.setdefault("recipient", user)
+
+        # Consistent first_name fallback for templates
+        if "first_name" not in ctx:
+            try:
+                if getattr(user, "first_name", ""):
+                    ctx["first_name"] = user.first_name
+            except Exception:
+                pass
+
+        # Notification URL (relative allowed; make absolute if present)
         ctx.setdefault("notification_url", _absolute_url(notif_url) if notif_url else "")
+
+        # Legacy support for templates that use {{ protocol }}://{{ domain }}
+        base = getattr(settings, "PUBLIC_BASE_URL", None)
+        if base:
+            parsed = urlparse(base)
+            ctx.setdefault("protocol", parsed.scheme)
+            ctx.setdefault("domain", parsed.netloc)
+        else:
+            # Fallback when PUBLIC_BASE_URL is not set: default to localhost
+            proto = "https" if getattr(settings, "SECURE_SSL_REDIRECT", False) else "http"
+            ctx.setdefault("protocol", proto)
+            ctx.setdefault("domain", "localhost:8000")
+
+        # Absolute site base for images/assets
+        base_site = _site_base()
+        ctx.setdefault("public_base_url", base_site)
+        ctx.setdefault("site_domain", base_site)  # legacy alias; remove once templates stop using it
 
         # Attach Player object if available (for templates that reference {{ player }})
         try:
@@ -451,6 +556,14 @@ def notify(
                 ctx.setdefault("player", p_for_user)
         except Exception:
             logger.exception("[notify] failed to attach player for user %s", getattr(user, "id", None))
+
+        # Normalize common URL fields in context to absolute (if present)
+        try:
+            for key in ("fixture_url", "availability_url", "lineup_url", "results_url", "notification_url"):
+                if ctx.get(key):
+                    ctx[key] = _absolute_url(ctx[key])
+        except Exception:
+            logger.exception("[notify] failed to absolutize URLs for user %s", getattr(user, "id", None))
 
         # Merge per-user extras (e.g., slot_label, player_first_name)
         try:

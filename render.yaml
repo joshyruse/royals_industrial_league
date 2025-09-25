@@ -1,24 +1,114 @@
+# render.yaml
 services:
   - type: web
-    name: royals-industrial-league
+    name: royals-dev
     env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
+    region: virginia
+    plan: starter
+    branch: dev
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
     startCommand: |
-      python manage.py migrate &&       python manage.py collectstatic --noinput &&       gunicorn royals_industrial_league.wsgi:application --preload --workers=2 --timeout=120
+      gunicorn royals_industrial_league.wsgi:application --bind 0.0.0.0:10000 --workers 3
     envVars:
-      - key: SECRET_KEY
-        generateValue: true
+      - key: DJANGO_SETTINGS_MODULE
+        value: royals_industrial_league.settings.dev
       - key: DEBUG
-        value: "False"
+        value: "false"
+      - key: SECRET_KEY            # set in dashboard after first import
+        generateValue: true
       - key: ALLOWED_HOSTS
-        value: "*"
+        value: royals-dev.onrender.com,dev.royalsleague.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://royals-dev.onrender.com,https://dev.royalsleague.com
+      - key: PUBLIC_BASE_URL
+        value: https://dev.royalsleague.com
       - key: DATABASE_URL
-        fromDatabase:
-          name: royals-industrial-league-db
-          property: connectionString
+        sync: false
       - key: PYTHON_VERSION
-        value: "3.11.9"
-databases:
-  - name: royals-industrial-league-db
-    plan: free
+        value: 3.12.6
+
+  - type: cron
+    name: match-reminders-dev
+    schedule: "0 14 * * 5"
+    startCommand: |
+      bash -lc '
+        set -euxo pipefail
+        python -V
+        echo "Installing Python deps..."
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        python -m pip show django twilio || true
+        python manage.py check -v 2
+        python manage.py send_match_reminders -v 3
+      '
+    env: python
+    plan: starter
+    branch: dev
+    buildCommand: |
+      pip install -r requirements.txt
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: royals_industrial_league.settings.dev
+      - key: DATABASE_URL
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.12.6
+
+#  - remove cron jobs for now
+#  - type: cron
+#    name: availability-reminders-dev
+#    schedule: "0 14 * * 1"
+#    startCommand: |
+#      bash -lc '
+#        set -euxo pipefail
+#        python -V
+#        echo "Installing Python deps..."
+#        pip install --upgrade pip
+#        pip install -r requirements.txt
+#        python -m pip show django twilio || true
+#        python manage.py check -v 2
+#        python manage.py send_availability_reminders -v 3
+#      '
+#    env: python
+#    plan: starter
+#    branch: dev
+#    buildCommand: |
+#      pip install -r requirements.txt
+#    envVars:
+#      - key: DJANGO_SETTINGS_MODULE
+#        value: royals_industrial_league.settings.dev
+#      - key: DATABASE_URL
+#        sync: false
+#      - key: PYTHON_VERSION
+#        value: 3.12.6
+
+  - type: web
+    name: royals-prod
+    env: python
+    region: virginia
+    plan: starter
+    branch: main
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    startCommand: |
+      gunicorn royals_industrial_league.wsgi:application --bind 0.0.0.0:10000 --workers 3
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: royals_industrial_league.settings.prod
+      - key: DEBUG
+        value: "false"
+      - key: SECRET_KEY            # set in dashboard after first import (or keep generateValue: true)
+        generateValue: true
+      - key: ALLOWED_HOSTS         # include onrender + your real domain(s)
+        value: royals-prod.onrender.com,royalsleague.com,www.royalsleague.com
+      - key: CSRF_TRUSTED_ORIGINS  # https scheme required
+        value: https://royals-prod.onrender.com,https://royalsleague.com,https://www.royalsleague.com
+      - key: PUBLIC_BASE_URL       # canonical public base URL for absolute links in SMS/email
+        value: https://royalsleague.com
+      - key: DATABASE_URL
+        sync: false                # link prod DB in the Render dashboard
+      - key: PYTHON_VERSION
+        value: 3.12.6

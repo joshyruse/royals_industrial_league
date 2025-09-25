@@ -1,0 +1,1041 @@
+/* Royals Industrial League — Centralized Theme */
+
+/* ——— Tokens ——————————————————————————————————— */
+:root{
+  /* Lint-silencers / safe defaults (Bootstrap sets these at runtime) */
+  --mx: 50%; /* spotlight x-pos fallback */
+  --my: 50%; /* spotlight y-pos fallback */
+  --bs-success-rgb: 25, 135, 84;   /* Bootstrap 5 default */
+  --bs-danger-rgb: 220, 53, 69;    /* Bootstrap 5 default */
+  --bs-warning-rgb: 255, 193, 7;   /* Bootstrap 5 default */
+  /* Brand / Royals purple */
+  --bs-primary: #5e2ea3;            /* deep purple */
+  --bs-primary-rgb: 94, 46, 163;    /* same in rgb */
+  --bs-link-color: var(--bs-primary);
+  --bs-link-hover-color: #4d2588;
+  --bs-focus-ring-color: rgba(var(--bs-primary-rgb), .25);
+  --row-hover: rgba(var(--bs-primary-rgb), .11); /* pale purple hover in light theme */
+
+  /* Elevation */
+  --elev-1: 0 2px 8px rgba(16,24,40,.08), 0 1px 1px rgba(16,24,40,.06);
+  --elev-2: 0 6px 24px rgba(16,24,40,.16), 0 2px 6px rgba(16,24,40,.10);
+
+  /* Glass */
+  --glass-bg: rgba(255,255,255,.72);
+  --glass-border: rgba(255,255,255,.35);
+  --glass-hairline: rgba(0,0,0,.06);
+
+  /* Muted text */
+  --muted: rgba(17,24,39,.62);
+  --muted-sub: rgba(17,24,39,.45);
+
+  /* Text tokens used by dark helpers */
+  --text-on-dark: #e8e8e8;
+  --text-on-dark-strong: #ffffff;
+
+  /* Donut center color (light) */
+  --donut-cutout: #ffffff;
+}
+/* Use neutral gray for "info" (ties, neutral badges) */
+:root{
+  --bs-info: #6b7280;              /* slate-500 */
+  --bs-info-rgb: 107, 114, 128;
+}
+html[data-theme="dark"]{
+  --bs-info: #9ca3af;              /* slate-400 */
+  --bs-info-rgb: 156, 163, 175;
+}
+html[data-theme="dark"]{
+  --bs-primary: #c6b0f0;           /* lighter purple for readability */
+  --bs-primary-rgb: 198, 176, 240;
+  --glass-bg: rgba(30,34,45,.62);
+  --glass-border: rgba(255,255,255,.18);
+  --glass-hairline: rgba(255,255,255,.12);
+  --muted: rgba(255,255,255,.74);
+  --muted-sub: rgba(255,255,255,.55);
+  --donut-cutout: #171a23;
+  --row-hover: rgba(var(--bs-primary-rgb), .10); /* slightly stronger for dark */
+}
+
+/* ——— Components ——————————————————————————————— */
+/* Glass card */
+.glass-card{
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  background-clip: padding-box;
+  box-shadow: var(--elev-1);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  will-change: auto; /* avoid GPU nudge unless needed */
+  isolation: isolate;
+  overflow: visible;
+}
+
+html[data-theme="dark"] .glass-card {
+  background: rgba(23,26,35,.35);
+  border-color: rgba(125, 86, 200, .28);
+}
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 22px rgba(17, 12, 28, .18),
+    0 3px 8px rgba(17, 12, 28, .12);
+  border-color: rgba(125, 86, 200, .32);
+}
+.glass-card:focus-within {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(var(--bs-primary-rgb), .1),
+    0 12px 24px rgba(17, 12, 28, .16);
+}
+
+/* optional spotlight using the --mx/--my vars the JS sets */
+ .glass-card::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(220px 220px at var(--mx,50%) var(--my,50%),
+              rgba(125, 86, 200, .18), transparent 60%);
+  opacity: .0;
+  transition: opacity .18s ease;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.glass-card:hover::before { opacity: .7; }
+.glass-card::after{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; box-shadow: inset 0 0 0 1px var(--glass-hairline); }
+/* Opt-in: only cards with .hover-lift get lift effect */
+.glass-card.hover-lift{ transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease; will-change: transform; }
+.glass-card.hover-lift:hover{ transform: translateY(-2px); box-shadow: var(--elev-2); border-color: rgba(255,255,255,.5); z-index:5; }
+.glass-card.hover-lift:active{ transform: translateY(0); box-shadow: var(--elev-1); }
+
+
+/* Lined titles */
+.card-title--lined{ position:relative; padding-bottom:.25rem; }
+.card-title--lined::after{ content:""; position:absolute; left:0; bottom:-2px; width:100%; height:1px; background: linear-gradient(90deg, rgba(0,0,0,.06), rgba(0,0,0,.12) 50%, rgba(0,0,0,.06)); }
+html[data-theme="dark"] .card-title--lined::after{ background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.10) 50%, rgba(255,255,255,.06)); }
+
+/* Glassy navbar */
+.glass-nav{ position: sticky; top:0; z-index:1030; background: var(--glass-bg) !important; border-bottom: 1px solid var(--glass-border); box-shadow: var(--elev-1); backdrop-filter: saturate(140%) blur(10px); -webkit-backdrop-filter: saturate(140%) blur(10px); }
+.glass-nav .nav-link{ color: inherit; opacity:.92; position:relative; }
+.glass-nav .nav-link::after{ content:""; position:absolute; left:.5rem; right:.5rem; bottom:.25rem; height:2px; background: transparent; border-radius:2px; transition: background .18s ease; }
+.glass-nav .nav-link:hover::after, .glass-nav .nav-link.active::after{ background: var(--bs-primary); }
+.glass-nav .nav-link.active{ background-color: rgba(var(--bs-primary-rgb), .12); color: var(--bs-primary); border-radius:.5rem; }
+html[data-theme="dark"] .glass-nav .nav-link.active{ background-color: rgba(255,255,255,.10); color:#fff; }
+.glass-nav .dropdown-menu{ box-shadow: var(--elev-1); border: 1px solid var(--glass-border); backdrop-filter: saturate(140%) blur(8px); -webkit-backdrop-filter: saturate(140%) blur(8px); background: var(--glass-bg); }
+.glass-nav .nav-item.dropdown.show > .nav-link,
+.glass-nav .nav-link.dropdown-toggle[aria-expanded="true"],
+.glass-nav .nav-link:focus{ background-color: rgba(var(--bs-primary-rgb), .10); color: var(--bs-primary); border-radius:.5rem; }
+
+/* Theme toggle — ensure icon is purple in light, white in dark */
+html:not([data-theme="dark"]) #themeToggle{
+  border-color: rgba(var(--bs-primary-rgb), .6);
+  color: var(--bs-primary);
+  background: transparent;
+}
+html:not([data-theme="dark"]) #themeToggle:hover{ background: rgba(var(--bs-primary-rgb), .10); }
+html:not([data-theme="dark"]) #themeToggle .bi{ color: var(--bs-primary); }
+html[data-theme="dark"] #themeToggle{
+  border-color: rgba(255,255,255,.6);
+  color: #fff;
+  background: transparent;
+}
+html[data-theme="dark"] #themeToggle:hover{ background: rgba(255,255,255,.12); }
+html[data-theme="dark"] #themeToggle .bi{ color: #fff; }
+
+/* Buttons — ensure Bootstrap picks up our purple tokens */
+.btn-primary{
+  --bs-btn-bg: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: #4d2588;
+  --bs-btn-hover-border-color: #4d2588;
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+  --bs-btn-active-bg: #441f7a;
+  --bs-btn-active-border-color: #441f7a;
+}
+.btn-outline-primary{
+  --bs-btn-color: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: var(--bs-primary);
+  --bs-btn-hover-border-color: var(--bs-primary);
+  --bs-btn-active-bg: var(--bs-primary);
+  --bs-btn-active-border-color: var(--bs-primary);
+}
+
+/* Profile pill */
+.profile-link{ display:flex; align-items:center; gap:.35rem; padding:.25rem .6rem; border-radius:999px; text-decoration:none !important; color:inherit; transition: background-color .18s ease, color .18s ease; }
+.profile-link:hover, .profile-link:focus{ background-color: rgba(var(--bs-primary-rgb), .12); color: var(--bs-primary); }
+html[data-theme="dark"] .profile-link:hover, html[data-theme="dark"] .profile-link:focus{ background-color: rgba(255,255,255,.10); color:#fff; }
+
+/* Notification bell */
+.glass-nav .notif-link .bi{ font-size:1.35rem; color: var(--bs-primary); line-height:1; }
+html[data-theme="dark"] .glass-nav .notif-link .bi{ color:#fff; }
+.glass-nav .notif-link{ position:relative; padding-right:.75rem; }
+.glass-nav .notif-link .notif-badge{ position:absolute; right:-.20rem; top:.10rem; font-size:.70rem; box-shadow:0 0 0 2px var(--glass-bg); }
+
+/* Footer */
+.glass-footer{ position:fixed; left:0; right:0; bottom:0; z-index:1020; background: linear-gradient(180deg, rgba(40,22,78,.86), rgba(40,22,78,.96)); border-top:1px solid rgba(255,255,255,.20); box-shadow: 0 -6px 20px rgba(15,23,42,.12); backdrop-filter: saturate(140%) blur(10px); -webkit-backdrop-filter: saturate(140%) blur(10px); color:#fff; }
+html[data-theme="dark"] .glass-footer{ background: linear-gradient(180deg, rgba(40,22,78,.86), rgba(40,22,78,.96)); border-top-color: rgba(255,255,255,.20); }
+.glass-footer small, .glass-footer span{ color:#fff; }
+.glass-footer .brand-chunk{ display:inline-flex; align-items:center; gap:.5rem; }
+.glass-footer .brand-chunk svg{ height:1em; width:1em; vertical-align:-.125em; filter: drop-shadow(0 1px 0 rgba(0,0,0,.15)); }
+
+/* ——— Dark mode global styles (restored) ——— */
+html[data-theme="dark"] body{
+  background: #12141a;
+  color: rgba(255,255,255,.92);
+}
+html[data-theme="dark"] .bg-light{ background-color: #131622 !important; }
+html[data-theme="dark"] .dropdown-menu{
+  background-color: #1b1e2a;
+  color: rgba(255,255,255,.9);
+  border-color: rgba(255,255,255,.12);
+}
+html[data-theme="dark"] .dropdown-item{ color: rgba(255,255,255,.9); }
+html[data-theme="dark"] .dropdown-item:hover{ background-color: rgba(255,255,255,.06); }
+html[data-theme="dark"] .text-muted{ color: var(--muted) !important; }
+html[data-theme="dark"] .text-secondary{ color: var(--muted) !important; }
+html[data-theme="dark"] small,
+html[data-theme="dark"] .small{ color: var(--muted-sub) !important; }
+html[data-theme="dark"] a,
+html[data-theme="dark"] .nav-link{ color: rgba(255,255,255,.92); }
+html[data-theme="dark"] a:hover,
+html[data-theme="dark"] .nav-link:hover{ color: #fff; }
+/* Outline buttons on dark */
+html[data-theme="dark"] .btn-outline-primary{
+  --bs-btn-color: rgba(255,255,255,.92);
+  --bs-btn-border-color: rgba(255,255,255,.65);
+  --bs-btn-hover-bg: var(--bs-primary);
+  --bs-btn-hover-border-color: var(--bs-primary);
+  --bs-btn-active-bg: var(--bs-primary);
+  --bs-btn-active-border-color: var(--bs-primary);
+}
+html[data-theme="dark"] .btn-outline-secondary{
+  --bs-btn-color: rgba(255,255,255,.92);
+  --bs-btn-border-color: rgba(255,255,255,.45);
+  --bs-btn-hover-bg: rgba(255,255,255,.16);
+  --bs-btn-hover-border-color: rgba(255,255,255,.55);
+  --bs-btn-active-bg: rgba(255,255,255,.2);
+  --bs-btn-active-border-color: rgba(255,255,255,.6);
+}
+html[data-theme="dark"] .btn-outline-light{
+  --bs-btn-color: rgba(255,255,255,.95);
+  --bs-btn-border-color: rgba(255,255,255,.7);
+  --bs-btn-hover-bg: rgba(255,255,255,.15);
+  --bs-btn-hover-border-color: rgba(255,255,255,.85);
+}
+
+
+/* Ripple */
+.rippleable{ position:relative; overflow:hidden; }
+.rippleable .ripple{ position:absolute; border-radius:50%; pointer-events:none; transform: scale(0); opacity:.35; background: rgba(var(--bs-primary-rgb), .45); animation: ripple .6s ease-out; }
+@keyframes ripple{ to{ transform: scale(3.2); opacity:0; } }
+
+/* Focus ring */
+:where(a, button, .btn, .nav-link, .dropdown-item):focus{ outline: 2px solid rgba(var(--bs-primary-rgb), .6); outline-offset: 2px; box-shadow: none !important; }
+
+/* Optional utilities */
+.text-muted-sub{ color: var(--muted-sub) !important; }
+.elev-1{ box-shadow: var(--elev-1) !important; }
+.elev-2{ box-shadow: var(--elev-2) !important; }
+
+/* Badge legibility in dark mode */
+html[data-theme="dark"] .badge.bg-light,
+html[data-theme="dark"] .text-bg-light{
+  background-color: rgba(255,255,255,.18) !important;
+  color: #fff !important;
+}
+
+/* Heading contrast in dark mode */
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6{ color:#fff !important; }
+
+/* Make glass tables inherit the card (so they’re not white in dark mode) */
+.table-glass-transparent{
+  --bs-table-bg: transparent;
+}
+.table-glass-transparent > :not(caption) > * > *{
+  background-color: transparent;
+}
+
+/* Season selector theming (scoped hook so we don’t affect every select) */
+html[data-theme="dark"] .theme-select{
+  background-color: rgba(30,34,45,.82);
+  color: rgba(255,255,255,.9);
+  border-color: var(--glass-border);
+}
+html[data-theme="dark"] .theme-select:focus{
+  box-shadow: 0 0 0 .2rem rgba(198,176,240,.20);
+  border-color: var(--bs-primary);
+}
+
+/* Dark mode table text color */
+html[data-theme="dark"] .glass-table th,
+html[data-theme="dark"] .glass-table td {
+  color: rgba(255,255,255,.92);
+}
+html[data-theme="dark"] .glass-table th {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Dark mode table captions and small text */
+html[data-theme="dark"] .glass-table caption,
+html[data-theme="dark"] .glass-table small,
+html[data-theme="dark"] .glass-table .small {
+  color: var(--muted-sub) !important;
+}
+
+/* Dark mode pagination */
+html[data-theme="dark"] .pagination .page-link{
+  background-color: rgba(30,34,45,.82);
+  color: rgba(255,255,255,.92);
+  border-color: var(--glass-border);
+}
+html[data-theme="dark"] .pagination .page-link:hover{
+  background-color: rgba(255,255,255,.08);
+  color: #fff;
+  border-color: var(--glass-border);
+}
+html[data-theme="dark"] .pagination .page-link:focus{
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
+  border-color: var(--bs-primary);
+}
+html[data-theme="dark"] .pagination .page-item.active .page-link{
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: #fff;
+}
+html[data-theme="dark"] .pagination .page-item.disabled .page-link{
+  background-color: rgba(30,34,45,.6);
+  color: rgba(255,255,255,.45);
+  border-color: var(--glass-border);
+}
+
+/* Dark mode form checks (checkboxes and radios) */
+html[data-theme="dark"] .form-check-input {
+  background-color: rgba(30,34,45,.82);
+  border-color: var(--glass-border);
+}
+html[data-theme="dark"] .form-check-input:checked {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+html[data-theme="dark"] .form-check-input:focus {
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
+  border-color: var(--bs-primary);
+}
+
+/* Dark mode input groups */
+html[data-theme="dark"] .input-group-text {
+  background-color: rgba(30,34,45,.82);
+  color: rgba(255,255,255,.9);
+  border-color: var(--glass-border);
+}
+
+/* ——— Dark mode alerts ——— */
+html[data-theme="dark"] .alert{
+  background-color: rgba(30,34,45,.82);
+  color: rgba(255,255,255,.92);
+  border-color: var(--glass-border);
+}
+/* Contextual alert tints */
+html[data-theme="dark"] .alert-primary{
+  background-color: rgba(var(--bs-primary-rgb), .18);
+  border-color: rgba(var(--bs-primary-rgb), .35);
+  color: #fff;
+}
+html[data-theme="dark"] .alert-success{
+  background-color: rgba(var(--bs-success-rgb), .18);
+  border-color: rgba(var(--bs-success-rgb), .35);
+  color: #d1fae5; /* soft minty text for contrast */
+}
+html[data-theme="dark"] .alert-danger{
+  background-color: rgba(var(--bs-danger-rgb), .18);
+  border-color: rgba(var(--bs-danger-rgb), .35);
+  color: #fee2e2;
+}
+html[data-theme="dark"] .alert-warning{
+  background-color: rgba(var(--bs-warning-rgb), .18);
+  border-color: rgba(var(--bs-warning-rgb), .38);
+  color: #fef3c7;
+}
+html[data-theme="dark"] .alert-info{
+  background-color: rgba(var(--bs-info-rgb), .18);
+  border-color: rgba(var(--bs-info-rgb), .35);
+  color: #dbeafe;
+}
+html[data-theme="dark"] .alert-secondary{
+  background-color: rgba(148,163,184,.18); /* slate-ish */
+  border-color: rgba(148,163,184,.35);
+  color: rgba(255,255,255,.92);
+}
+html[data-theme="dark"] .alert-light{
+  background-color: rgba(255,255,255,.14);
+  border-color: rgba(255,255,255,.28);
+  color: #fff;
+}
+html[data-theme="dark"] .alert-dark{
+  background-color: rgba(17,20,28,.82);
+  border-color: rgba(255,255,255,.18);
+  color: rgba(255,255,255,.92);
+}
+
+/* ——— Dark mode modals ——— */
+html[data-theme="dark"] .modal-content{
+  background-color: rgba(30,34,45,.90);
+  color: rgba(255,255,255,.92);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--elev-2);
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+}
+html[data-theme="dark"] .modal-header,
+html[data-theme="dark"] .modal-footer{
+  border-color: var(--glass-border);
+}
+html[data-theme="dark"] .modal-title{ color:#fff; }
+
+/* Close button visible on dark */
+html[data-theme="dark"] .btn-close{
+  filter: invert(1) grayscale(100%) opacity(.85);
+}
+
+/* Dim the backdrop a touch more on dark */
+html[data-theme="dark"] .modal-backdrop.show{
+  opacity: .6;
+  background-color: #0b0e14;
+}
+
+/* ——— Toasts ——— */
+.toast{
+  border-color: var(--glass-border);
+  box-shadow: var(--elev-1);
+  backdrop-filter: saturate(140%) blur(6px);
+  -webkit-backdrop-filter: saturate(140%) blur(6px);
+}
+.toast-header{
+  border-bottom-color: var(--glass-border);
+}
+html:not([data-theme="dark"]) .toast{
+  background-color: rgba(255,255,255,.86);
+}
+html[data-theme="dark"] .toast{
+  background-color: rgba(30,34,45,.90);
+  color: rgba(255,255,255,.92);
+}
+html[data-theme="dark"] .toast-header{
+  background-color: rgba(30,34,45,.82);
+  color: rgba(255,255,255,.9);
+  border-bottom-color: var(--glass-border);
+}
+html[data-theme="dark"] .btn-close.toast{
+  filter: invert(1) grayscale(100%) opacity(.85);
+}
+
+/* ——— Offcanvas ——— */
+.offcanvas{
+  border-left: 1px solid var(--glass-border);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: var(--elev-2);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+}
+html:not([data-theme="dark"]) .offcanvas{
+  background-color: rgba(255,255,255,.86);
+}
+html[data-theme="dark"] .offcanvas{
+  background-color: rgba(30,34,45,.92);
+  color: rgba(255,255,255,.92);
+}
+html[data-theme="dark"] .offcanvas-header,
+html[data-theme="dark"] .offcanvas-footer{
+  border-color: var(--glass-border);
+}
+html[data-theme="dark"] .offcanvas .btn-close{
+  filter: invert(1) grayscale(100%) opacity(.85);
+}
+/* Dark mode: global select & input overrides */
+html[data-theme="dark"] select.form-select,
+html[data-theme="dark"] input.form-control,
+html[data-theme="dark"] textarea.form-control {
+  background-color: rgba(30,34,45,.82);
+  color: rgba(255,255,255,.92);
+  border-color: var(--glass-border);
+}
+
+html[data-theme="dark"] select.form-select:focus,
+html[data-theme="dark"] input.form-control:focus,
+html[data-theme="dark"] textarea.form-control:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
+}
+
+/* Light mode inputs (glassy) */
+input.form-control,
+select.form-select,
+textarea.form-control {
+  background-color: var(--glass-bg);
+  color: inherit;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--elev-1);
+  backdrop-filter: saturate(140%) blur(6px);
+  -webkit-backdrop-filter: saturate(140%) blur(6px);
+}
+
+/* Focus states (light mode) */
+:where(.form-control, .form-select):focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
+  background-color: var(--glass-bg);
+}
+
+/* Input group aesthetics */
+.input-group .form-control {
+  background-color: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+.input-group .btn,
+.input-group-text {
+  background-color: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+.input-group .btn:hover {
+  background-color: rgba(var(--bs-primary-rgb), .06);
+}
+/* Password eye button stability */
+.input-group .toggle-password {
+  min-width: 2.5rem; /* reserve width so icon swap doesn’t jiggle */
+}
+.input-group .toggle-password i {
+  display: inline-block;
+  width: 1.25em; /* fixed glyph width */
+  text-align: center;
+}
+.input-group .toggle-password:focus {
+  outline: none;
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .15);
+}
+/* Override Bootstrap's info badge to neutral gray */
+.badge.bg-info,
+.text-bg-info {
+  background-color: var(--bs-info) !important;
+  color: #fff !important;
+}
+
+/* Dark mode badge tweak (slightly lighter gray for contrast) */
+html[data-theme="dark"] .badge.bg-info,
+html[data-theme="dark"] .text-bg-info {
+  background-color: var(--bs-info) !important;
+  color: #fff !important;
+}
+
+/* Force "info" text to neutral gray (for Tie labels, etc.) */
+.text-info{
+  color: rgba(var(--bs-info-rgb), 1) !important;
+}
+a.text-info:hover,
+a.text-info:focus{
+  color: rgba(var(--bs-info-rgb), 1) !important;
+}
+/* ——— Glass list groups (light & dark) ——— */
+.glass-card .list-group { background: transparent; }
+.glass-card .list-group-item {
+  background-color: transparent;
+  border-color: var(--glass-hairline);
+  color: inherit; /* follow card text color */
+}
+
+/* Hover/active states */
+.list-group-item-action:hover,
+.list-group-item-action:focus {
+  background-color: rgba(var(--bs-primary-rgb), .06);
+}
+.list-group-item.active {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: #fff;
+}
+
+/* Dark mode tweaks */
+html[data-theme="dark"] .glass-card .list-group-item {
+  color: rgba(255,255,255,.92);
+  border-color: var(--glass-border);
+}
+html[data-theme="dark"] .list-group-item-action:hover,
+html[data-theme="dark"] .list-group-item-action:focus {
+  background-color: rgba(255,255,255,.06);
+}
+.navbar-logo {
+  height: 90px; /* adjust to taste */
+  opacity: 1;
+  transition: opacity 160ms ease-in-out;
+}
+.navbar-logo.is-fading { opacity: 0;
+}
+
+/* Navbar logo sizing & navbar height */
+.navbar .navbar-brand { padding-top: 0; padding-bottom: 0; line-height: 1; }
+.navbar .navbar-logo { height: 56px !important; width: auto; display: block; }
+.glass-nav { padding-top: 8px; padding-bottom: 8px; min-height: 72px; }
+
+@media (min-width: 992px) {
+  .navbar .navbar-logo { height: 64px !important; }
+  .glass-nav { min-height: 80px; }
+}
+
+/* Sticky, glassy table header */
+.table-head-glass th {
+  position: sticky;
+  top: 0;
+  z-index: 1025; /* above rows, below navbar (1030) */
+  background: var(--glass-bg);
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* Handy utility we used in templates */
+.minw-220 { min-width: 220px !important; }
+
+/* Stronger, smarter focus styling */
+:where(a, button, .btn, .nav-link, .dropdown-item):focus-visible {
+  outline: 2px solid rgba(var(--bs-primary-rgb), .65);
+  outline-offset: 2px;
+  box-shadow: none !important;
+}
+
+/* Skip link for keyboard users (add <a href="#main" class="skip-link">Skip to content</a> in base.html) */
+.skip-link {
+  position: absolute; left: 0; top: -40px;
+  background: var(--bs-primary); color: #fff; padding: .5rem .75rem; border-radius: .5rem;
+  transition: top .15s ease; z-index: 2000;
+}
+.skip-link:focus { top: .5rem; }
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .glass-card { transition: none; }
+  .glass-card:hover { transform: none; }
+  .rippleable .ripple { animation-duration: .01ms; animation-iteration-count: 1; }
+}
+
+/* Dark-mode validation on form controls */
+html[data-theme="dark"] .form-control.is-invalid,
+html[data-theme="dark"] .form-select.is-invalid {
+  border-color: rgba(255, 99, 132, .75);
+  background-image: none;
+}
+html[data-theme="dark"] .form-control.is-valid,
+html[data-theme="dark"] .form-select.is-valid {
+  border-color: rgba(34, 197, 94, .75);
+  background-image: none;
+}
+tr.row-link {
+  cursor: pointer;
+  transition: background-color .2s ease, transform .2s ease;
+}
+tr.row-link:hover { background-color: var(--row-hover); }
+html[data-theme="dark"] tr.row-link:hover { background-color: var(--row-hover);
+}
+/* Apply the same hover treatment to all Bootstrap table-hover rows */
+.table-hover > tbody > tr:hover > * {
+  background-color: var(--row-hover) !important;
+}
+tr.table-active > * {
+  background-color: rgba(var(--bs-primary-rgb), .18) !important;
+}
+html[data-theme="dark"] tr.table-active > * {
+  background-color: rgba(255,255,255, .14) !important;
+}
+
+/* —— Tooltips & Popovers (themed) —— */
+.tooltip-inner{ background: rgba(30,34,45,.92); color:#fff; border:1px solid var(--glass-border); }
+.tooltip .tooltip-arrow{ display:none; }
+.popover{ background: rgba(30,34,45,.92); color:#fff; border:1px solid var(--glass-border); box-shadow: var(--elev-1); }
+html:not([data-theme="dark"]) .popover,
+html:not([data-theme="dark"]) .tooltip-inner{
+  background: rgba(255,255,255,.95); color:#111827; border-color: rgba(0,0,0,.08);
+}
+
+/* —— Scrollbars (subtle, consistent) —— */
+*{ scrollbar-width: thin; scrollbar-color: rgba(var(--bs-primary-rgb),.35) transparent; }
+::-webkit-scrollbar{ height:10px; width:10px; }
+::-webkit-scrollbar-thumb{ background: rgba(var(--bs-primary-rgb),.35); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover{ background: rgba(var(--bs-primary-rgb),.55); }
+
+/* —— Content link hover (not nav) —— */
+main a:hover{ text-decoration: underline; }
+
+/* —— Print stylesheet (captain-friendly) —— */
+@media print {
+  .glass-nav, .glass-footer, .btn, .toast, .alert, .offcanvas { display:none !important; }
+  .glass-card, .table { box-shadow:none !important; border:1px solid #ccc; background:#fff !important; }
+  body { color:#000 !important; background:#fff !important; }
+  .table thead th { position: static !important; background:#fff !important; }
+}
+
+/* —— Global interaction transitions —— */
+.btn, .btn:focus, .btn:hover,
+.nav-link, .dropdown-item,
+.form-control, .form-select,
+.list-group-item,
+.card, .glass-card,
+.table, .table-hover > tbody > tr > *,
+.tooltip, .popover,
+.profile-link,
+.toast {
+  transition: color .2s ease, background-color .2s ease,
+              border-color .2s ease, box-shadow .2s ease;
+}
+
+/* Hint browsers about color schemes for native UI elements */
+:root { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+
+/* —— Table density utilities —— */
+.table-compact > :not(caption) > * > * { padding: .5rem .6rem; }
+.table-super-compact > :not(caption) > * > * { padding: .35rem .5rem; }
+
+/* —— Mobile-friendly tables —— */
+/* Smooth scrolling for horizontally scrollable tables */
+.glass-card .table-responsive { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+/* Make sticky headers play nicely inside responsive wrappers */
+.glass-card .table-responsive .table thead th { position: sticky; top: 0; z-index: 1025; }
+
+/* Font sizing & spacing tweaks on small screens */
+@media (max-width: 576px) {
+  .glass-card .table { font-size: .95rem; }
+  .table-compact > :not(caption) > * > * { padding: .4rem .5rem; }
+  .table-super-compact > :not(caption) > * > * { padding: .3rem .45rem; }
+}
+
+/* —— Optional helper: force a table to have a min width so columns don’t crush on mobile —— */
+.table-min-640 { min-width: 640px; }
+.table-min-768 { min-width: 768px; }
+
+/* Prevent content from hiding under the fixed glass footer */
+body { padding-bottom: 64px; }
+
+/* Inline eye icon inside inputs */
+.input-with-eye {
+  position: relative;
+}
+.input-with-eye .form-control {
+  padding-right: 2.5rem; /* room for the eye */
+}
+.input-with-eye .eye-btn {
+  position: absolute;
+  top: 50%;
+  right: .6rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+}
+.input-with-eye .eye-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .15);
+  border-radius: .375rem; /* subtle focus halo */
+}
+.input-with-eye .eye-btn i {
+  display: inline-block;
+  width: 1.25em; /* fix width, no jiggle when swapping icons */
+  text-align: center;
+}
+/* Safety sizing so hero/login images never blow up */
+.login-hero-logo,
+.footer-brand-logo,
+.navbar-brand img {
+  display: block;
+  max-width: min(560px, 80vw);
+  width: auto;
+  height: auto;
+}
+
+/* Ensure auth buttons don’t look gigantic without Bootstrap */
+.auth-card .btn {
+  font-size: 1rem;
+  padding: .6rem 1rem;
+  line-height: 1.2;
+}
+/* Keep toasts above nav/modals */
+#toast-stack {
+  z-index: 1080; /* same as before, now CSP-safe */
+  position: relative; /* ensures z-index takes effect */
+}
+/* Login page images (moved from inline styles) */
+.login-title-img {
+  max-height: 80px;
+  object-fit: contain;
+  height: auto;
+  width: auto;
+  display: inline-block; /* kept centered by .text-center wrapper */
+}
+
+.login-footer-logo {
+  max-height: 250px;
+  object-fit: contain;
+  height: auto;
+  width: auto;
+  display: inline-block;
+}
+
+/* Optional safety cap so images never overflow if Bootstrap fails to load */
+.login-title-img,
+.login-footer-logo {
+  max-width: 90vw;
+}
+/* ===== Dashboard utilities ===== */
+.max-420 { max-width: 420px; }
+.d-none { display: none !important; } /* just in case */
+.z-1080 { z-index: 1080 !important; }
+
+/* Donut: layout + depth */
+.donut-wrap { position: relative; padding: 8px 0 4px; }
+.donut-chart { width: 280px; height: 280px; border-radius: 50%; position: relative; margin: 0 auto; box-shadow: 0 2px 10px rgba(15,23,42,.08) inset; }
+.donut-chart::before {
+  content:""; position:absolute; inset:-6px; border-radius:50%;
+  background: radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,.55), rgba(255,255,255,0) 46%),
+              radial-gradient(120% 120% at 70% 80%, rgba(0,0,0,.06), rgba(0,0,0,0) 40%);
+  filter: blur(.2px); pointer-events:none;
+}
+.donut-chart::after {
+  content:""; position:absolute; inset:20%; background: var(--donut-cutout, #fff); border-radius:50%;
+  box-shadow: inset 0 12px 30px rgba(0,0,0,.06), inset 0 -8px 16px rgba(0,0,0,.04);
+}
+.donut-center { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:60px; color: var(--bs-primary); line-height:1; }
+.donut-center-sub { position:absolute; left:50%; top:calc(50% + 42px); transform:translateX(-50%); font-size:12px; color:#6c757d; letter-spacing:.4px; text-transform:uppercase; }
+#myRecordLegend { display:flex; align-items:center; justify-content:center; gap:18px; margin-top:10px; }
+.legend-item { cursor:pointer; padding:4px 8px; border-radius:8px; transition: background-color .15s ease; }
+.legend-item:hover { background-color: rgba(0,0,0,.04); }
+.legend-swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+.donut-wrap.hovering { filter: drop-shadow(0 8px 16px rgba(0,0,0,.12)); transform: translateY(-1px); transition: filter .15s ease, transform .15s ease; }
+
+/* Donut hover-hit arcs */
+.donut-hit { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.donut-svg { width:280px; height:280px; }
+.donut-arc { pointer-events: stroke; cursor: pointer; }
+
+/* Tiles */
+.tile-link { display:block; height:100%; }
+@media (min-width: 992px) { .tile-tall { min-height:460px; } }
+.dashboard-first-row { margin-top:24px; padding-top:8px; }
+@media (min-width: 992px) { .dashboard-first-row { margin-top:28px; padding-top:10px; } }
+
+/* Avatar + trend chips */
+.avatar { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; background: var(--bs-primary); font-weight:700; font-size:28px; box-shadow: inset 0 0 0 2px rgba(255,255,255,.35); }
+.trend { display:flex; gap:6px; }
+.trend-chip { width:18px; height:6px; border-radius:4px; opacity:.9; }
+.trend-chip.win { background: var(--bs-primary); }
+.trend-chip.loss { background: #dc3545; }
+.trend-chip.tie { background: #6c757d; }
+
+/* Big gradient numbers */
+.big-number { background: linear-gradient(180deg, var(--bs-primary), #5a34ad); -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+/* Focus ring + buttons */
+.btn { border-radius: 999px; }
+.btn-primary:focus-visible, .btn-outline-primary:focus-visible { box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .25); }
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce){ .glass-card, .glass-card:hover { transition:none; transform:none; } }
+
+/* Theme variables used by donut center background */
+html[data-theme="dark"] .donut-chart::after {
+  background: var(--donut-cutout, #171a23);
+  box-shadow: inset 0 12px 24px rgba(0,0,0,.28), inset 0 -8px 16px rgba(0,0,0,.20);
+}
+/* tables that scroll within a card */
+.table-scroll-70 { max-height: 70vh; overflow: auto; }
+
+/* dropdown width in notif bell */
+.dropdown-wide { min-width: 320px; }
+
+
+/* auth card helpers */
+.auth-viewport { min-height: 80vh; }
+.auth-card { width: 100%; max-width: 480px; }
+.logo-80 { max-height: 80px; }
+.logo-100h { height: 100px; display: block; margin: 0 auto; } /* for footer logo in emails previewed in web */
+
+/* width helpers to replace <th style="width:..."> */
+.w-08 { width: 8%; }
+.w-10 { width: 10%; } .w-12 { width:12%; } .w-14 { width:14%; } .w-15 { width:15%; }
+.w-16 { width:16%; } .w-18 { width:18%; } .w-20 { width:20%; } .w-22 { width:22%; }
+.w-24 { width:24%; } .w-25 { width:25%; } .w-26 { width:26%; } .w-28 { width:28%; }
+.w-30 { width:30%; } .w-2-25rem{width:2.25rem;} .w-9rem{width:9rem;} .w-6rem{width:6rem;} /* add more if you need */
+
+.cursor-pointer { cursor: pointer; }
+
+.white-space {white-space: pre-wrap}
+
+.text-purple {
+  color: #6f42c1 !important; /* adjust hex to your league’s purple */
+}
+
+/* === Navbar toggler: purple lined icon (visible in light mode) === */
+.glass-nav .navbar-toggler .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%235e2ea3' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+html[data-theme="dark"] .glass-nav .navbar-toggler .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Mobile overlay navbar + stacked dropdowns */
+@media (max-width: 991.98px) {
+  .glass-nav .container { position: static; }
+
+  .navbar .navbar-collapse.show {
+    position: fixed;
+    inset: 0;
+    padding: 1rem;
+    background: var(--glass-bg);
+    backdrop-filter: saturate(140%) blur(10px);
+    -webkit-backdrop-filter: saturate(140%) blur(10px);
+    border-top: 1px solid var(--glass-border);
+    z-index: 1050;
+    overflow-y: auto;
+  }
+  body.nav-open { overflow: hidden; }
+
+  /* Vertical stacks */
+  .navbar .navbar-collapse .navbar-nav { align-items: stretch !important; }
+  .navbar .navbar-collapse .nav-link { padding: .75rem 1rem; font-size: 1.05rem; }
+
+  /* Dropdowns render inline under their toggles */
+  .navbar .navbar-collapse .dropdown-menu {
+    position: static;
+    float: none;
+    display: none; /* toggled by .show */
+    width: 100%;
+    padding: 0;
+    margin: .25rem 0 0 .75rem; /* indent under parent */
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+  .navbar .navbar-collapse .dropdown-menu.show { display: block; }
+  .navbar .navbar-collapse .dropdown-item { padding: .5rem 1rem; border-radius: .5rem; }
+
+  /* Offcanvas dropdowns: inline and visible when .show */
+  .offcanvas .dropdown-menu {
+    position: static;
+    float: none;
+    display: none;
+    width: 100%;
+    margin: .25rem 0 0 .75rem;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+  .offcanvas .dropdown-menu.show { display: block; }
+}
+/* Ensure offcanvas overlays everything in our glass layout */
+.offcanvas.glass-offcanvas { z-index: 2000; }
+.offcanvas-backdrop { z-index: 1990; }
+
+/* Safety: guarantee desktop nav appears at lg+ */
+@media (min-width: 992px) {
+  .navbar .d-lg-flex { display: flex !important; }
+}
+/* Light default is already handled by your glass styles */
+
+/* === Standings table: dark-mode fixes (use data-theme) === */
+html[data-theme="dark"] .table-standings-theme,
+.theme-dark .table-standings-theme {
+  /* Override Bootstrap table vars so background doesn’t stay white */
+  --bs-table-bg: transparent;
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.03);
+  --bs-table-striped-color: inherit;
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.05);
+  --bs-table-hover-color: inherit;
+  color: var(--text-on-dark, #e8e8e8);
+  background: transparent;
+}
+
+html[data-theme="dark"] .table-standings-theme thead.table-head-glass th,
+.theme-dark .table-standings-theme thead.table-head-glass th {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-on-dark-strong, #ffffff);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="dark"] .table-standings-theme td,
+html[data-theme="dark"] .table-standings-theme th,
+.theme-dark .table-standings-theme td,
+.theme-dark .table-standings-theme th {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .table-standings-theme tbody tr,
+.theme-dark .table-standings-theme tbody tr {
+  background-color: transparent; /* keep glass card showing through */
+}
+
+/* Full-screen loader overlay */
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;                  /* hidden by default */
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(10, 8, 20, 0.45); /* glassy backdrop */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2000;                  /* above offcanvas/toasts */
+}
+
+.loader-overlay.show {
+  display: flex;
+  animation: loaderFadeIn 120ms ease-out;
+}
+
+@keyframes loaderFadeIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+
+/* Spinning tennis ball */
+.loader-ball {
+  width: 72px;
+  height: 72px;
+  animation: spin 0.9s linear infinite;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.25));
+  opacity: 1;
+  transition: opacity 160ms ease-in-out;
+}
+.loader-ball.is-fading {
+  opacity: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loader-text {
+  font-weight: 600;
+  color: #5a2aa8;
+  text-shadow: 0 1px 2px rgba(0,0,0,.25);
+}
+
+/* Dark theme tweaks */
+[data-theme="dark"] .loader-text {
+  color: #bca7ff;
+}
+/* Better placeholder + help text contrast in dark theme */
+[data-theme="dark"] .placeholder-contrast::placeholder {
+  color: rgba(255,255,255,0.7) !important;
+  opacity: 1; /* Safari/iOS */
+}
+
+[data-theme="dark"] .help-contrast {
+  color: rgba(255,255,255,0.75) !important;
+}
