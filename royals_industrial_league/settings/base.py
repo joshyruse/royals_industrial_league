@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parents[2]  # adjust if your tree differs
 
@@ -70,16 +71,14 @@ TEMPLATES = [
 WSGI_APPLICATION = "royals_industrial_league.wsgi.application"
 ASGI_APPLICATION = "royals_industrial_league.asgi.application"
 
-# DB (dev defaults to sqlite; override via env in dev/prod)
+# DB: prefer DATABASE_URL via dj_database_url; fall back to local sqlite
 DATABASES = {
-    "default": {
-        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.getenv("DB_NAME", BASE_DIR / "db.sqlite3"),
-        "USER": os.getenv("DB_USER", ""),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", ""),
-        "PORT": os.getenv("DB_PORT", ""),
-    }
+    "default": dj_database_url.config(
+        env="DATABASE_URL",
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "600")),
+        ssl_require=(os.getenv("DB_SSL_REQUIRE", "true").lower() in ("1", "true", "yes")),
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
