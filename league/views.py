@@ -3821,6 +3821,7 @@ class ThemedPasswordResetForm(PasswordResetForm):
                 'token': token,
                 'protocol': protocol,
                 'reset_url': reset_url,
+                'public_base_url': getattr(settings, "PUBLIC_BASE_URL","")
             }
             if extra_email_context:
                 context.update(extra_email_context)
