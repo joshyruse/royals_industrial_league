@@ -10,6 +10,7 @@ services:
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
     startCommand: |
+      python manage.py migrate --noinput && \
       gunicorn royals_industrial_league.wsgi:application --bind 0.0.0.0:10000 --workers 3
     envVars:
       - key: DJANGO_SETTINGS_MODULE
@@ -24,8 +25,6 @@ services:
         value: https://royals-dev.onrender.com,https://dev.royalsleague.com
       - key: PUBLIC_BASE_URL
         value: https://dev.royalsleague.com
-      - key: DATABASE_URL
-        sync: false
       - key: PYTHON_VERSION
         value: 3.12.6
 
@@ -51,8 +50,6 @@ services:
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: royals_industrial_league.settings.dev
-      - key: DATABASE_URL
-        sync: false
       - key: PYTHON_VERSION
         value: 3.12.6
 
@@ -94,6 +91,7 @@ services:
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
     startCommand: |
+      python manage.py migrate --noinput && \
       gunicorn royals_industrial_league.wsgi:application --bind 0.0.0.0:10000 --workers 3
     envVars:
       - key: DJANGO_SETTINGS_MODULE
@@ -108,7 +106,5 @@ services:
         value: https://royals-prod.onrender.com,https://royalsleague.com,https://www.royalsleague.com
       - key: PUBLIC_BASE_URL       # canonical public base URL for absolute links in SMS/email
         value: https://royalsleague.com
-      - key: DATABASE_URL
-        sync: false                # link prod DB in the Render dashboard
       - key: PYTHON_VERSION
         value: 3.12.6
