@@ -57,7 +57,8 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "league.context_processors.notifications_context",
-                "league.context_processors.sms_flags"
+                "league.context_processors.sms_flags",
+                "league.context_processors.public_base_url"
             ],
             "builtins": [
                 "django.templatetags.static",
